@@ -164,8 +164,8 @@ rows = cols[0].number_input("Grid Rows", min_value=5, max_value=30, value=10)
 cols = cols[1].number_input("Grid Columns", min_value=5, max_value=30, value=10)
 
 num_words = st.slider("Number of Words to Place", 1, 20, 5)
-word_input = st.text_area("Enter Words (comma-separated)", "export, import, invoice, shipment, freight")
-orientation_options = st.multiselect("Allowed Directions", list(DIRECTIONS.keys()), default=['H', 'HR', 'V', 'VR', 'D1', 'D2', 'D3', 'D4'])
+word_input = st.text_area("Enter Words (comma-separated)", "baleada, catracha, pupusa, tapado, enchilada")
+orientation_options = st.multiselect("Allowed Directions", list(DIRECTIONS.keys()), default=['H', 'V', 'D1'])
 difficulty_mode = st.checkbox("🎯 Add Difficulty (decoy fragments)", value=False)
 
 if st.button("Generate Puzzle"):
