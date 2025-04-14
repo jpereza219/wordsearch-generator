@@ -116,9 +116,10 @@ def display_grid(grid, highlight_coords=None):
     html = "<table style='font-family: monospace; border-collapse: collapse;'>"
     highlight_coords = set(highlight_coords or [])  # Ensure it's a set
 
-    for r, row in enumerate(grid):
+    for r in range(len(grid)):
         html += "<tr>"
-        for c, char in enumerate(row):
+        for c in range(len(grid[0])):
+            char = grid[r][c]
             is_highlighted = (r, c) in highlight_coords
             style = (
                 "padding:5px; border:1px solid #ccc; text-align:center;"
@@ -163,7 +164,7 @@ cols = cols[1].number_input("Grid Columns", min_value=5, max_value=30, value=10)
 
 num_words = st.slider("Number of Words to Place", 1, 20, 5)
 word_input = st.text_area("Enter Words (comma-separated)", "export, import, invoice, shipment, freight")
-orientation_options = st.multiselect("Allowed Directions", list(DIRECTIONS.keys()), default=['H', 'V', 'D1'])
+orientation_options = st.multiselect("Allowed Directions", list(DIRECTIONS.keys()), default=['H', 'HR', 'V', 'VR', 'D1', 'D2', 'D3', 'D4'])
 difficulty_mode = st.checkbox("🎯 Add Difficulty (decoy fragments)", value=False)
 
 if st.button("Generate Puzzle"):
@@ -184,9 +185,9 @@ if "grid" in st.session_state and "placed" in st.session_state:
         for word, d, r, c, _ in placed:
             st.markdown(f"**{word}** at ({r}, {c}) `{d}`")
 
-    solution_coords = {coord for *_, coords in placed for coord in coords}
+    solution_coords = {(r, c) for *_, coords in placed for (r, c) in coords}
     st.markdown("### 🧠 Solution View")
     st.markdown(display_grid(grid, highlight_coords=solution_coords), unsafe_allow_html=True)
 
     pdf = generate_pdf(grid, solution_coords)
-    st.download_button("📅 Download PDF (Puzzle + Solution)", data=pdf, file_name="wordsearch_puzzle.pdf", mime="application/pdf")
+    st.download_button("🗕️ Download PDF (Puzzle + Solution)", data=pdf, file_name="wordsearch_puzzle.pdf", mime="application/pdf")
