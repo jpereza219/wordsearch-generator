@@ -1,4 +1,6 @@
 import streamlit as st
+st.set_page_config(page_title="Word Search Generator", layout="centered")
+
 import random
 import string
 from io import BytesIO
@@ -155,7 +157,6 @@ def generate_pdf(grid, solution_coords):
     return buffer
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="Word Search Generator", layout="centered")
 st.title("🧩 Word Search Puzzle Generator")
 
 cols = st.columns(2)
@@ -171,23 +172,26 @@ if st.button("Generate Puzzle"):
     words = [w.strip() for w in word_input.split(',') if w.strip()]
     grid, placed = generate_puzzle((rows, cols), num_words, words, set(orientation_options), difficulty_mode)
     st.session_state["grid"] = grid
-    st.session_state["placed"] = placed
+    st.session_state["placed"] = [item for item in placed if item and len(item) == 5 and item[0]]
 
 if "grid" in st.session_state and "placed" in st.session_state:
     grid = st.session_state["grid"]
     placed = st.session_state["placed"]
 
-    st.markdown("### 🔤 Puzzle Grid")
+    st.markdown("### 🌤 Puzzle Grid")
     st.markdown(display_grid(grid), unsafe_allow_html=True)
 
     if placed:
         st.markdown("### ✅ Words Placed")
-        for word, d, r, c, _ in placed:
-            st.markdown(f"**{word}** at ({r}, {c}) `{d}`")
+        for item in placed:
+            if item and len(item) == 5:
+                word, d, r, c, _ = item
+                if word:
+                    st.markdown(f"**{word}** at ({r}, {c}) `{d}`")
 
     solution_coords = set()
     for item in placed:
-        if len(item) == 5:
+        if item and len(item) == 5:
             _, _, _, _, coords = item
             solution_coords.update(coords)
 
