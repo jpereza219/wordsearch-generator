@@ -32,7 +32,7 @@ def place_word(grid, word, row, col, direction):
 def fill_grid(grid):
     for r in range(len(grid)):
         for c in range(len(grid[0])):
-            if grid[r][c] == '':
+            if grid[r][c] == '' or grid[r][c] is None:
                 grid[r][c] = random.choice(string.ascii_uppercase)
 
 # Word placement logic with overlap scoring
@@ -119,7 +119,7 @@ def display_grid(grid, highlight_coords=None):
     for r in range(len(grid)):
         html += "<tr>"
         for c in range(len(grid[0])):
-            char = grid[r][c]
+            char = grid[r][c] or ' '
             is_highlighted = (r, c) in highlight_coords
             style = (
                 "padding:5px; border:1px solid #ccc; text-align:center;"
@@ -185,7 +185,12 @@ if "grid" in st.session_state and "placed" in st.session_state:
         for word, d, r, c, _ in placed:
             st.markdown(f"**{word}** at ({r}, {c}) `{d}`")
 
-    solution_coords = {(r, c) for *_, coords in placed for (r, c) in coords}
+    solution_coords = set()
+    for item in placed:
+        if len(item) == 5:
+            _, _, _, _, coords = item
+            solution_coords.update(coords)
+
     st.markdown("### 🧠 Solution View")
     st.markdown(display_grid(grid, highlight_coords=solution_coords), unsafe_allow_html=True)
 
