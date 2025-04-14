@@ -7,10 +7,10 @@ from reportlab.pdfgen import canvas
 
 # Direction vectors
 DIRECTIONS = {
-    'H':  (0, 1), 'HR': (0, -1),
-    'V':  (1, 0), 'VR': (-1, 0),
-    'D1':  (1, 1), 'D2': (-1, -1),
-    'D3': (-1,1), 'D4': (1,-1)
+    'Horizontal':  (0, 1), 'Horizontal_Rev': (0, -1),
+    'Vertical':  (1, 0), 'Vertical_Rev': (-1, 0),
+    'Diagonal_1':  (1, 1), 'Diagonal_2': (-1, -1),
+    'Diagonal_3': (-1,1), 'Diagonal_4': (1,-1)
 }
 
 # Core grid helpers
@@ -158,7 +158,7 @@ cols = cols[1].number_input("Grid Columns", min_value=5, max_value=30, value=10)
 
 num_words = st.slider("Number of Words to Place", 1, 20, 5)
 word_input = st.text_area("Enter Words (comma-separated)", "export, import, invoice, shipment, freight")
-orientation_options = st.multiselect("Allowed Directions", list(DIRECTIONS.keys()), default=['H', 'V', 'D1'])
+orientation_options = st.multiselect("Allowed Directions", list(DIRECTIONS.keys()), default=['Horizontal', 'Vertical', 'Diagonal_1'])
 difficulty_mode = st.checkbox("🎯 Add Difficulty (decoy fragments)", value=False)
 
 if st.button("Generate Puzzle"):
@@ -168,9 +168,14 @@ if st.button("Generate Puzzle"):
     st.markdown("### 🔤 Puzzle Grid")
     st.markdown(display_grid(grid), unsafe_allow_html=True)
 
+if placed:
     st.markdown("### ✅ Words Placed")
-    for word, d, r, c, _ in placed:
-        st.markdown(f"**{word}** at ({r}, {c}) `{d}`")
+    for entry in placed:
+        if entry and len(entry) >= 5:
+            word, d, r, c, _ = entry
+            st.markdown(f"**{word}** at ({r}, {c}) `{d}`")
+else:
+    st.warning("No words could be placed. Try increasing grid size or reducing word count.")
 
     solution_coords = {coord for *_, coords in placed for coord in coords}
     st.markdown("### 🧠 Solution View")
