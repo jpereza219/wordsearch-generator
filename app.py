@@ -113,12 +113,18 @@ def generate_puzzle(grid_size, num_words, word_list, orientations, difficulty_mo
 
 # Grid HTML view
 def display_grid(grid, highlight_coords=None):
-    html = "<table style='font-family: monospace;'>"
+    html = "<table style='font-family: monospace; border-collapse: collapse;'>"
+    highlight_coords = set(highlight_coords or [])  # Ensure it's a set
+
     for r, row in enumerate(grid):
         html += "<tr>"
         for c, char in enumerate(row):
-            style = "background-color: yellow; font-weight: bold;" if highlight_coords and (r, c) in highlight_coords else ""
-            html += f"<td style='padding:5px; border:1px solid #ccc; text-align:center; {style}'>{char}</td>"
+            is_highlighted = (r, c) in highlight_coords
+            style = (
+                "padding:5px; border:1px solid #ccc; text-align:center;"
+                + (" background-color: yellow; font-weight: bold;" if is_highlighted else "")
+            )
+            html += f"<td style='{style}'>{char}</td>"
         html += "</tr>"
     html += "</table>"
     return html
@@ -157,7 +163,7 @@ cols = cols[1].number_input("Grid Columns", min_value=5, max_value=30, value=10)
 
 num_words = st.slider("Number of Words to Place", 1, 20, 5)
 word_input = st.text_area("Enter Words (comma-separated)", "export, import, invoice, shipment, freight")
-orientation_options = st.multiselect("Allowed Directions", list(DIRECTIONS.keys()), default=['H', 'V', 'D1'])
+orientation_options = st.multiselect("Allowed Directions", list(DIRECTIONS.keys()), default=['H', 'V', 'D'])
 difficulty_mode = st.checkbox("🎯 Add Difficulty (decoy fragments)", value=False)
 
 if st.button("Generate Puzzle"):
@@ -183,4 +189,4 @@ if "grid" in st.session_state and "placed" in st.session_state:
     st.markdown(display_grid(grid, highlight_coords=solution_coords), unsafe_allow_html=True)
 
     pdf = generate_pdf(grid, solution_coords)
-    st.download_button("📥 Download PDF (Puzzle + Solution)", data=pdf, file_name="wordsearch_puzzle.pdf", mime="application/pdf")
+    st.download_button("📅 Download PDF (Puzzle + Solution)", data=pdf, file_name="wordsearch_puzzle.pdf", mime="application/pdf")
