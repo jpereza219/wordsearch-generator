@@ -31,11 +31,11 @@ def place_word(grid, word, row, col, direction):
         grid[r][c] = char
     return coords
 
-def fill_grid(grid):
+def fill_grid(grid, filler_chars):
     for r in range(len(grid)):
         for c in range(len(grid[0])):
             if grid[r][c] == '' or grid[r][c] is None:
-                grid[r][c] = random.choice(string.ascii_uppercase)
+                grid[r][c] = random.choice(filler_chars)
 
 # Word placement logic with overlap scoring
 def find_best_position(grid, word, orientations):
@@ -92,7 +92,7 @@ def add_decoys(grid, placed_words, num_decoys=5):
             added += 1
 
 # Puzzle builder wrapper
-def generate_puzzle(grid_size, num_words, word_list, orientations, difficulty_mode=False):
+def generate_puzzle(grid_size, num_words, word_list, orientations, difficulty_mode=False, filler_chars=None):
     rows, cols = grid_size
     grid = [['' for _ in range(cols)] for _ in range(rows)]
     placed_words = []
@@ -110,13 +110,13 @@ def generate_puzzle(grid_size, num_words, word_list, orientations, difficulty_mo
     if difficulty_mode:
         add_decoys(grid, placed_words)
 
-    fill_grid(grid)
+    fill_grid(grid, filler_chars or string.ascii_uppercase)
     return grid, placed_words
 
 # Grid HTML view
 def display_grid(grid, highlight_coords=None):
     html = "<table style='font-family: monospace; border-collapse: collapse;'>"
-    highlight_coords = set(highlight_coords or [])  # Ensure it's a set
+    highlight_coords = set(highlight_coords or [])
 
     for r in range(len(grid)):
         html += "<tr>"
@@ -168,9 +168,21 @@ word_input = st.text_area("Enter Words (comma-separated)", "baleada, catracha, p
 orientation_options = st.multiselect("Allowed Directions", list(DIRECTIONS.keys()), default=['H', 'V', 'D1'])
 difficulty_mode = st.checkbox("🎯 Add Difficulty (decoy fragments)", value=False)
 
+# Special characters option
+use_specials = st.checkbox("🔡 Use special characters in filler")
+custom_specials = ""
+if use_specials:
+    custom_specials = st.text_input("Enter additional special characters (e.g. Ñ, Á, É, Ü):", value="ÑÁÉÍÓÚÜ")
+
 if st.button("Generate Puzzle"):
     words = [w.strip() for w in word_input.split(',') if w.strip()]
-    grid, placed = generate_puzzle((rows, cols), num_words, words, set(orientation_options), difficulty_mode)
+
+    # Build filler set
+    filler_chars = list(string.ascii_uppercase)
+    if use_specials:
+        filler_chars.extend(list(custom_specials.upper()))
+
+    grid, placed = generate_puzzle((rows, cols), num_words, words, set(orientation_options), difficulty_mode, filler_chars)
     st.session_state["grid"] = grid
     st.session_state["placed"] = [item for item in placed if item and len(item) == 5 and item[0]]
 
