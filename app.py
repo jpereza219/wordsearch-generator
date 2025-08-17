@@ -255,7 +255,26 @@ if st.button("Generar sopa"):
     )
 
     st.markdown("### 🧩 Vista previa")
-    st.text("\n".join(" ".join(r) for r in grid))
+    # collect solution coords
+    solution_coords = set()
+    for _, coords in placed:
+        for rc in coords:
+            solution_coords.add(rc)
+
+    # build HTML table with bold solution letters
+    html = "<table style='font-family: monospace; border-collapse: collapse;'>"
+    for r in range(rows):
+        html += "<tr>"
+        for c in range(cols):
+            ch = grid[r][c]
+            if (r, c) in solution_coords:
+                html += f"<td style='padding:3px;'><b>{ch}</b></td>"
+            else:
+                html += f"<td style='padding:3px;'>{ch}</td>"
+        html += "</tr>"
+    html += "</table>"
+
+    st.markdown(html, unsafe_allow_html=True)
 
     pdf_buffer = generate_pdf(grid, placed, [w.upper() for w in words_display])
     st.download_button(
