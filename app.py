@@ -129,8 +129,9 @@ st.title("Generador de Sopa de Letras Cultural (Honduras)")
 
 puzzle_size = st.slider("Tamaño del tablero", 10, 25, 15)
 
-words_input = st.text_area("Palabras (separadas por coma):", "niño, asó, ’üsü, san pedro sula")
-words = clean_words(words_input.split(","))
+# Word input now row-based
+words_input = st.text_area("Palabras (una por línea):", "niño\nasó\n’üsü\nsan pedro sula")
+words = clean_words(words_input.splitlines())
 
 # Difficulty levels
 difficulty = st.selectbox(
