@@ -250,7 +250,8 @@ def test_puzzle_files_y_zip(puzzle):
     assert sorted(files) == sorted([
         "s404_sopa_de_letras.pdf", "s404_sopa.svg", "s404_solucion.svg",
         "s404_sopa_cuadricula.pdf", "s404_solucion_cuadricula.pdf", "s404_cuadricula.txt",
-    ])
+        "s404_solucion_autor.svg",
+    ])  # sin ficha: 6 del libro + solución del autor (con ficha: 8, ver test_ruta_secreta.py)
     data = salidas.puzzle_zip(files)
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         assert sorted(zf.namelist()) == sorted(files)

@@ -4,6 +4,7 @@ st.set_page_config(page_title="Word Search Generator", layout="centered")
 import base64
 import secrets
 
+from ficha import FichaError, build_ficha, load_ficha, regenerate_from_ficha
 from motor import DIRS, DIFFICULTY_PRESETS, PuzzleError, clean_specials_input, create_puzzle
 from salidas import file_names, grid_svg, grid_text, puzzle_files, puzzle_zip
 
@@ -47,9 +48,31 @@ if use_specials:
         "Caracteres especiales (separados por comas)",
         value="Ñ,Á,É,Í,Ó,Ú,Ü, ’"
     )
+specials_field = custom_specials if use_specials else ""
 custom_specials = clean_specials_input(custom_specials) if use_specials else ""
 
+hidden_input = st.text_area("Ruta Secreta (palabras ocultas, una por línea)", "")
+hidden_list = [w for w in hidden_input.split("\n") if w.strip()]
+
 seed_input = st.text_input("Semilla (dejar vacío para una nueva)", value="")
+
+
+def store_puzzle(result, seed, ficha):
+    """Guarda todo lo generado para que la vista previa no desaparezca al pulsar
+    un botón de descarga (cada clic vuelve a ejecutar el script)."""
+    files = puzzle_files(result.grid, result.placed, result.words_display, seed,
+                         hidden=result.hidden_words, ficha=ficha)
+    names = file_names(seed)
+    st.session_state["puzzle"] = {
+        "seed": seed,
+        "result": result,
+        "files": files,
+        "zip": puzzle_zip(files),
+        "text": grid_text(result.grid),
+        "solution_svg": files[names["solucion_svg"]].decode("utf-8"),
+        "author_svg": files[names["autor_svg"]].decode("utf-8"),
+    }
+
 
 if st.button("Generar sopa"):
     seed_text = seed_input.strip()
@@ -70,7 +93,8 @@ if st.button("Generar sopa"):
             allowed_dirs=allowed_dirs,
             extra_chars=custom_specials,
             decoy_fragments=decoys,
-            seed=seed
+            seed=seed,
+            hidden_words=hidden_list
         )
     except PuzzleError as e:
         st.session_state.pop("puzzle", None)
@@ -78,17 +102,25 @@ if st.button("Generar sopa"):
             st.error(message)
         st.stop()
 
-    # Se guarda todo lo generado para que la vista previa no desaparezca al
-    # pulsar un botón de descarga (cada clic vuelve a ejecutar el script).
-    files = puzzle_files(result.grid, result.placed, result.words_display, seed)
-    st.session_state["puzzle"] = {
-        "seed": seed,
-        "result": result,
-        "files": files,
-        "zip": puzzle_zip(files),
-        "text": grid_text(result.grid),
-        "solution_svg": grid_svg(result.grid, result.placed, solution=True),
-    }
+    ficha = build_ficha(
+        result, seed=seed, rows=rows, cols=cols, allowed_dirs=allowed_dirs, decoys=decoys,
+        extra_chars=custom_specials, words=words_list, hidden_words=hidden_list,
+        difficulty=difficulty, specials_field=specials_field,
+    )
+    store_puzzle(result, seed, ficha)
+
+with st.expander("📄 Regenerar un puzzle desde su ficha.json"):
+    uploaded = st.file_uploader("Ficha del puzzle (ficha.json)", type=["json"])
+    if st.button("Regenerar desde la ficha", disabled=uploaded is None):
+        try:
+            data = load_ficha(uploaded.getvalue())
+            result = regenerate_from_ficha(data)
+        except FichaError as e:
+            st.session_state.pop("puzzle", None)
+            st.error(str(e))
+            st.stop()
+        store_puzzle(result, data["semilla"], data)
+        st.session_state["puzzle"]["from_ficha"] = True
 
 puzzle = st.session_state.get("puzzle")
 if puzzle:
@@ -96,15 +128,21 @@ if puzzle:
     grid, placed, words_display = result.grid, result.placed, result.words_display
     names = file_names(seed)
 
+    if puzzle.get("from_ficha"):
+        st.success("Puzzle regenerado desde la ficha: la cuadrícula coincide con la guardada.")
     st.write(f"Semilla usada: {seed}")
-    st.write(f"{len(placed)} de {len(words_display)} palabras colocadas")
+    hidden_count = len(result.hidden_placed)
+    count = f"{len(result.visible_placed)} de {len(words_display)} palabras colocadas"
+    if hidden_count:
+        count += f" + {hidden_count} oculta{'s' if hidden_count > 1 else ''}"
+    st.write(count)
     for message in result.warnings:
         st.warning(message)
 
     st.markdown("### 🧩 Vista previa")
-    # collect solution coords
+    # collect solution coords (solo las palabras de la lista; las ocultas no se resaltan)
     solution_coords = set()
-    for _, coords in placed:
+    for _, coords in result.visible_placed:
         for rc in coords:
             solution_coords.add(rc)
 
@@ -140,9 +178,18 @@ if puzzle:
     st.caption("Una fila por línea, letras separadas por un espacio. Usa el botón de copiar.")
     st.code(puzzle["text"], language=None)
 
-    st.markdown("### ✅ Solución")
+    st.markdown("### ✅ Solución (libro)")
     svg_b64 = base64.b64encode(puzzle["solution_svg"].encode("utf-8")).decode("ascii")
     st.markdown(
         f'<img alt="Solución" style="max-width:100%;" src="data:image/svg+xml;base64,{svg_b64}">',
         unsafe_allow_html=True,
     )
+
+    if hidden_count:
+        with st.expander("🔒 Solución del autor (USO INTERNO — Ruta Secreta marcada)"):
+            author_b64 = base64.b64encode(puzzle["author_svg"].encode("utf-8")).decode("ascii")
+            st.markdown(
+                f'<img alt="Solución del autor" style="max-width:100%;" '
+                f'src="data:image/svg+xml;base64,{author_b64}">',
+                unsafe_allow_html=True,
+            )

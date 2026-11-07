@@ -1,0 +1,145 @@
+{
+  "formato": "ficha-sopa/1",
+  "motor_version": "3.0",
+  "titulo": null,
+  "semilla": 505,
+  "filas": 15,
+  "columnas": 15,
+  "dificultad": "Custom",
+  "direcciones": [
+    "H",
+    "HR",
+    "V",
+    "VR",
+    "D1",
+    "D2",
+    "D3",
+    "D4"
+  ],
+  "senuelos": 6,
+  "especiales_campo": "ÑÁÉÍÓÚÜ",
+  "especiales": "ÑÁÉÍÓÚÜ",
+  "palabras": [
+    "BELICE",
+    "COLOMBIA",
+    "CUBA",
+    "EL SALVADOR",
+    "GUATEMALA",
+    "ISLAS CAIMÁN",
+    "JAMAICA",
+    "MÉXICO",
+    "NICARAGUA"
+  ],
+  "ocultas": [
+    "GRACIAS"
+  ],
+  "colocacion": [
+    {
+      "palabra": "ISLASCAIMÁN",
+      "texto": "ISLAS CAIMÁN",
+      "oculta": false,
+      "fila": 7,
+      "columna": 1,
+      "direccion": "H",
+      "largo": 11
+    },
+    {
+      "palabra": "ELSALVADOR",
+      "texto": "EL SALVADOR",
+      "oculta": false,
+      "fila": 9,
+      "columna": 12,
+      "direccion": "HR",
+      "largo": 10
+    },
+    {
+      "palabra": "GUATEMALA",
+      "texto": "GUATEMALA",
+      "oculta": false,
+      "fila": 13,
+      "columna": 12,
+      "direccion": "VR",
+      "largo": 9
+    },
+    {
+      "palabra": "NICARAGUA",
+      "texto": "NICARAGUA",
+      "oculta": false,
+      "fila": 4,
+      "columna": 1,
+      "direccion": "D1",
+      "largo": 9
+    },
+    {
+      "palabra": "COLOMBIA",
+      "texto": "COLOMBIA",
+      "oculta": false,
+      "fila": 14,
+      "columna": 7,
+      "direccion": "D2",
+      "largo": 8
+    },
+    {
+      "palabra": "JAMAICA",
+      "texto": "JAMAICA",
+      "oculta": false,
+      "fila": 6,
+      "columna": 5,
+      "direccion": "D3",
+      "largo": 7
+    },
+    {
+      "palabra": "GRACIAS",
+      "texto": "GRACIAS",
+      "oculta": true,
+      "fila": 0,
+      "columna": 14,
+      "direccion": "D4",
+      "largo": 7
+    },
+    {
+      "palabra": "BELICE",
+      "texto": "BELICE",
+      "oculta": false,
+      "fila": 5,
+      "columna": 14,
+      "direccion": "V",
+      "largo": 6
+    },
+    {
+      "palabra": "MÉXICO",
+      "texto": "MÉXICO",
+      "oculta": false,
+      "fila": 14,
+      "columna": 8,
+      "direccion": "H",
+      "largo": 6
+    },
+    {
+      "palabra": "CUBA",
+      "texto": "CUBA",
+      "oculta": false,
+      "fila": 3,
+      "columna": 6,
+      "direccion": "HR",
+      "largo": 4
+    }
+  ],
+  "cuadricula": [
+    "H H M J V Á V W Á X S A L B G",
+    "L U B M B O F Ü O Ü C P T R K",
+    "C Í Ñ É W Á Q S Q I H J A G I",
+    "L S S A B U C B A M U C E C Ü",
+    "A N M C Í Y M M L M I N D V Á",
+    "I B I Ü C Í A E K A V I A Á B",
+    "F F Z C X J Q Á S A I G L C E",
+    "A I S L A S C A I M Á N A T L",
+    "G I Ñ A Q R H T S Í N Ñ M Á I",
+    "J M B R O D A V L A S L E Q C",
+    "Ó V K M B X E G M G D Í T Ñ E",
+    "Ñ Ú G D O N U Ü U N Í N A N O",
+    "X E B R L L I B Z A B H U Q W",
+    "L D L Q J T O L A S F E G W Á",
+    "A M X C Z Z Y C M É X I C O K"
+  ]
+}
