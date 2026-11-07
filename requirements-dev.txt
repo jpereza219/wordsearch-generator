@@ -1,0 +1,3 @@
+# Solo para pruebas (no lo instala Streamlit Cloud).
+pytest==9.2.0
+pypdf==7.0.0

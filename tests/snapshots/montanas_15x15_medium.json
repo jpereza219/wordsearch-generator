@@ -1,0 +1,281 @@
+{
+  "case": "montanas_15x15_medium",
+  "config": {
+    "seed": 303,
+    "rows": 15,
+    "cols": 15,
+    "difficulty": "Medium",
+    "allowed_dirs": [
+      "H",
+      "HR",
+      "V",
+      "VR",
+      "D1",
+      "D4"
+    ],
+    "decoy_fragments": 0,
+    "specials_ui": "Ñ,Á,É,Í,Ó,Ú,Ü, ’",
+    "extra_chars": "ÑÁÉÍÓÚÜ’",
+    "words": [
+      "MERENDÓN",
+      "CELAQUE",
+      "PUCA-OPALACA",
+      "PUCA",
+      "LEPATERIQUE",
+      "DIPILTO"
+    ]
+  },
+  "grid": [
+    "Y M C T N K D I P I L T O R ’",
+    "L Z U H Ó K Ó R Ü X L Á V L Á",
+    "L E B D D P Ú V Y O É E P Í T",
+    "E T I Z N Í Í Ü I J ’ U P A G",
+    "P Ú L H E A C U P H C Í X Ñ V",
+    "A A E H R R Í I F A Z Z U B Ü",
+    "T Q P É E Ú V E - B E H U J H",
+    "E J N N M G F O R R T Á Á L N",
+    "R W Ó Y I É P Z X W M U S W Í",
+    "I K N Ü X A W Y S C W R Z I Ñ",
+    "Q B Ó I L Ü N C V Ó G Á I T F",
+    "U E L A Ü D O W C E L A Q U E",
+    "E N C S Z G K Ó Ü E S L Í R N",
+    "D A U Y D Í Q S J R L D A Ü Á",
+    "C V Ñ É B A E H A Ú Q Q F F B"
+  ],
+  "placed": [
+    {
+      "word": "MERENDÓN",
+      "coords": [
+        [
+          7,
+          4
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          0,
+          4
+        ]
+      ]
+    },
+    {
+      "word": "CELAQUE",
+      "coords": [
+        [
+          11,
+          8
+        ],
+        [
+          11,
+          9
+        ],
+        [
+          11,
+          10
+        ],
+        [
+          11,
+          11
+        ],
+        [
+          11,
+          12
+        ],
+        [
+          11,
+          13
+        ],
+        [
+          11,
+          14
+        ]
+      ]
+    },
+    {
+      "word": "PUCA-OPALACA",
+      "coords": [
+        [
+          2,
+          12
+        ],
+        [
+          3,
+          11
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          7,
+          7
+        ],
+        [
+          8,
+          6
+        ],
+        [
+          9,
+          5
+        ],
+        [
+          10,
+          4
+        ],
+        [
+          11,
+          3
+        ],
+        [
+          12,
+          2
+        ],
+        [
+          13,
+          1
+        ]
+      ]
+    },
+    {
+      "word": "PUCA",
+      "coords": [
+        [
+          4,
+          8
+        ],
+        [
+          4,
+          7
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "word": "LEPATERIQUE",
+      "coords": [
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          7,
+          0
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          11,
+          0
+        ],
+        [
+          12,
+          0
+        ]
+      ]
+    },
+    {
+      "word": "DIPILTO",
+      "coords": [
+        [
+          0,
+          6
+        ],
+        [
+          0,
+          7
+        ],
+        [
+          0,
+          8
+        ],
+        [
+          0,
+          9
+        ],
+        [
+          0,
+          10
+        ],
+        [
+          0,
+          11
+        ],
+        [
+          0,
+          12
+        ]
+      ]
+    }
+  ],
+  "words_display": [
+    "MERENDÓN",
+    "CELAQUE",
+    "PUCA-OPALACA",
+    "PUCA",
+    "LEPATERIQUE",
+    "DIPILTO"
+  ]
+}
