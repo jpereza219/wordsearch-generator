@@ -49,6 +49,23 @@ CASES = {
         specials_ui=DEFAULT_SPECIALS_UI,
         words=["MERENDÓN", "CELAQUE", "PUCA-OPALACA", "PUCA", "LEPATERIQUE", "DIPILTO"],
     ),
+    # 20x20, Custom con las 8 direcciones (6 señuelos por defecto), municipios de Francisco Morazán.
+    "municipios_fm_20x20_custom8": dict(
+        seed=404,
+        rows=20,
+        cols=20,
+        difficulty="Custom",
+        allowed_dirs=ALL_DIRS,
+        decoys=CUSTOM_DEFAULT_DECOYS,
+        specials_ui="ÑÁÉÍÓÚÜ",
+        words=[
+            "DISTRITO CENTRAL", "ALUBARÉN", "CEDROS", "CURARÉN", "EL PORVENIR", "GUAIMACA",
+            "LA LIBERTAD", "LA VENTA", "LEPATERIQUE", "MARAITA", "MARALE", "NUEVA ARMENIA",
+            "OJOJONA", "ORICA", "REITOCA", "SABANAGRANDE", "SAN ANTONIO DE ORIENTE",
+            "SAN BUENAVENTURA", "SAN IGNACIO", "SANTA ANA", "SANTA LUCÍA", "TALANGA",
+            "TATUMBLA", "VALLE DE ÁNGELES", "VALLECILLO", "VILLA DE SAN FRANCISCO",
+        ],
+    ),
 }
 
 

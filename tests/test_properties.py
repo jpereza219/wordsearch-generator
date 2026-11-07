@@ -73,3 +73,28 @@ def test_relleno_solo_az_mas_especiales(motor_mod, seeded, case_name, seed):
         for c, cell in enumerate(row):
             if (r, c) not in word_cells:
                 assert cell in alphabet, f"relleno {cell!r} fuera del alfabeto en {(r, c)}"
+
+
+@pytest.mark.parametrize("case_name,seed", _params())
+def test_toda_palabra_de_la_lista_esta_en_la_cuadricula(motor_mod, seeded, case_name, seed):
+    case = CASES[case_name]
+    grid, placed, words_display, *_ = _generate(motor_mod, seeded, case, seed)
+    assert len(placed) == len(words_display)
+    assert {w for w, _ in placed} == {motor_mod.clean_word(d) for d in words_display}
+
+
+@pytest.mark.parametrize("case_name,seed", _params())
+def test_cada_palabra_una_sola_vez(motor_mod, seeded, case_name, seed):
+    """Cada palabra se lee exactamente una vez en las 8 direcciones, salvo las
+    lecturas que caen dentro de otra palabra de la lista (avisadas en 2e)."""
+    case = CASES[case_name]
+    grid, placed, *_ = _generate(motor_mod, seeded, case, seed)
+    cells = {w: set(coords) for w, coords in placed}
+    for w, coords in placed:
+        occurrences = motor_mod.find_occurrences(grid, w)
+        assert tuple(sorted(coords)) in occurrences
+        extra = [
+            occ for occ in occurrences
+            if occ != tuple(sorted(coords)) and not any(o != w and set(occ) <= cells[o] for o in cells)
+        ]
+        assert extra == [], f"{w} tiene copias extra: {extra}"

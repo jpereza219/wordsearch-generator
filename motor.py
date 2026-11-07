@@ -1,14 +1,26 @@
 """Motor de generación de sopas de letras (sin dependencias de Streamlit).
 
-Código movido desde app.py sin cambios de lógica. La única diferencia es que
-todas las decisiones al azar usan una instancia propia `random.Random(seed)`
-en lugar del módulo `random` global. Las llamadas se hacen en el mismo orden
-que antes, así que `generate_puzzle(..., seed=N)` produce exactamente lo mismo
-que el código anterior tras `random.seed(N)`.
+Todas las decisiones al azar usan una instancia propia `random.Random(seed)`:
+con la misma entrada, configuración y semilla, el resultado es idéntico.
+
+Flujo de create_puzzle():
+  1. Normalización NFC de palabras y caracteres especiales.
+  2. Validación previa: repetidas (aviso), largo mínimo (error), palabras que no
+     caben en ninguna dirección permitida (error), sin direcciones (error),
+     palabras contenidas en otras (aviso), letras fuera del alfabeto de relleno
+     (aviso).
+  3. Colocación de la más larga a la más corta, probando TODAS las posiciones
+     válidas en orden barajado. Si una palabra no cabe, se reinicia el puzzle.
+  4. Señuelos y relleno (igual que antes).
+  5. Verificación de copias: cada palabra debe aparecer exactamente una vez
+     (salvo las contenidas en otras). Las copias con celdas de relleno se
+     corrigen cambiando esas letras; si no se puede, se reinicia el puzzle.
 """
 
 import random
 import string
+import unicodedata
+from dataclasses import dataclass, field
 
 # ----------------------------
 # Directions (8-way)
@@ -35,13 +47,56 @@ DIFFICULTY_PRESETS = {
     "Custom":    ([], 0),
 }
 
+MIN_WORD_LEN = 3
+
+# Puzzles completos que se intentan antes de rendirse. Cada intento reinicia la
+# cuadrícula con el mismo rng (que sigue avanzando). Ver PR del paso 3.
+MAX_ATTEMPTS = 50
+
+# Cambios de letras de relleno por intento para eliminar copias por azar.
+MAX_FILL_FIXES = 200
+
+
+class PuzzleError(ValueError):
+    """Error de validación o de generación. `errors` tiene un mensaje por problema."""
+
+    def __init__(self, errors):
+        self.errors = list(errors)
+        super().__init__("\n".join(self.errors))
+
+
+@dataclass
+class PuzzleResult:
+    grid: list
+    placed: list            # [(palabra_limpia, [(fila, col), ...]), ...] en orden de colocación
+    words_display: list     # lista impresa (sin repetidas), tal como se escribió (NFC)
+    warnings: list = field(default_factory=list)
+    attempts: int = 1
+
+
 # ----------------------------
 # Helpers
 # ----------------------------
+def nfc(text: str) -> str:
+    return unicodedata.normalize("NFC", text)
+
+
 def clean_specials_input(text: str) -> str:
     if not text:
         return ""
     return "".join([ch for ch in text.replace(",", "").replace(" ", "")])
+
+
+def clean_word(word: str) -> str:
+    """Forma que ocupa la cuadrícula: NFC, sin espacios, en mayúsculas."""
+    return nfc(nfc(word).replace(" ", "").strip().upper())
+
+
+def filler_alphabet(extra_chars: str) -> str:
+    """Alfabeto de relleno: A–Z + especiales (en mayúsculas, NFC)."""
+    extra = nfc(nfc(extra_chars).upper()) if extra_chars else ""
+    return string.ascii_uppercase + extra
+
 
 def can_place(grid, word, row, col, dr, dc):
     rows, cols = len(grid), len(grid[0])
@@ -92,49 +147,269 @@ def fill_empty(grid, filler_chars: str, *, rng: random.Random):
             if grid[r][c] == "":
                 grid[r][c] = rng.choice(filler_chars)
 
+
+def max_word_length(rows, cols, allowed_dirs):
+    """Largo máximo que cabe con las direcciones permitidas."""
+    best = 0
+    for key in allowed_dirs:
+        dr, dc = DIRS[key]
+        if dr == 0:
+            best = max(best, cols)
+        elif dc == 0:
+            best = max(best, rows)
+        else:
+            best = max(best, min(rows, cols))
+    return best
+
+
+def find_occurrences(grid, word):
+    """Conjuntos de celdas donde se lee `word` en cualquiera de las 8 direcciones.
+
+    Un palíndromo leído en los dos sentidos sobre las mismas celdas cuenta una vez.
+    Devuelve una lista ordenada (determinista) de tuplas de celdas.
+    """
+    rows, cols = len(grid), len(grid[0])
+    n = len(word)
+    found = set()
+    first = word[0]
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] != first:
+                continue
+            for dr, dc in DIRS.values():
+                er, ec = r + dr * (n - 1), c + dc * (n - 1)
+                if not (0 <= er < rows and 0 <= ec < cols):
+                    continue
+                if all(grid[r + dr * i][c + dc * i] == word[i] for i in range(1, n)):
+                    found.add(tuple(sorted((r + dr * i, c + dc * i) for i in range(n))))
+    return sorted(found)
+
+
+# ----------------------------
+# Validación
+# ----------------------------
+@dataclass
+class Prepared:
+    words_display: list
+    words_clean: list
+    filler_chars: str
+    allowed_dirs: list
+    warnings: list
+
+
+def prepare_words(words, rows, cols, allowed_dirs, extra_chars: str) -> Prepared:
+    """Normaliza y valida. Lanza PuzzleError con todos los errores encontrados."""
+    errors, warnings = [], []
+
+    # 1. Normalización
+    entries = [nfc(w).strip() for w in words if w.strip()]
+    filler_chars = filler_alphabet(extra_chars)
+
+    # 2a. Repetidas (forma limpia)
+    words_display, words_clean, removed = [], [], []
+    seen = set()
+    for display in entries:
+        clean = clean_word(display)
+        if clean in seen:
+            removed.append(display)
+            continue
+        seen.add(clean)
+        words_display.append(display)
+        words_clean.append(clean)
+    if removed:
+        warnings.append("Se eliminaron palabras repetidas: " + ", ".join(removed) + ".")
+
+    # 2d. Direcciones
+    dirs = []
+    for key in allowed_dirs or []:
+        if key not in DIRS:
+            errors.append(f"Dirección desconocida: {key}.")
+        elif key not in dirs:
+            dirs.append(key)
+    if not allowed_dirs:
+        errors.append("No hay ninguna dirección permitida: marca al menos una.")
+
+    if not words_clean:
+        errors.append("No hay palabras para colocar.")
+
+    # 2b. Largo mínimo
+    short = [d for d, c in zip(words_display, words_clean) if len(c) < MIN_WORD_LEN]
+    if short:
+        errors.append(
+            f"Palabras con menos de {MIN_WORD_LEN} letras: " + ", ".join(short) + "."
+        )
+
+    # 2c. Palabras que no caben
+    if dirs:
+        limit = max_word_length(rows, cols, dirs)
+        for d, c in zip(words_display, words_clean):
+            if len(c) > limit:
+                errors.append(
+                    f"«{d}» tiene {len(c)} letras y no cabe: el máximo con estas direcciones "
+                    f"en {rows}x{cols} es {limit}."
+                )
+
+    if errors:
+        raise PuzzleError(errors)
+
+    # 2e. Palabras contenidas en otras (aviso). La lectura al revés solo se
+    # avisa si las direcciones permitidas incluyen alguna junto con su opuesta.
+    vectors = {DIRS[k] for k in dirs}
+    reversed_allowed = any((-dr, -dc) in vectors for dr, dc in vectors)
+    for d_a, a in zip(words_display, words_clean):
+        for d_b, b in zip(words_display, words_clean):
+            if a == b:
+                continue
+            if a in b:
+                warnings.append(
+                    f"«{d_a}» está dentro de «{d_b}»: aparecerá más de una vez en la cuadrícula."
+                )
+            elif reversed_allowed and a[::-1] in b:
+                warnings.append(
+                    f"«{d_a}» está dentro de «{d_b}» leída al revés: aparecerá más de una vez "
+                    f"en la cuadrícula."
+                )
+
+    # 2f. Letras fuera del alfabeto de relleno (aviso)
+    alphabet = set(filler_chars)
+    missing = {}
+    for d, c in zip(words_display, words_clean):
+        for ch in c:
+            if ch not in alphabet:
+                missing.setdefault(ch, [])
+                if d not in missing[ch]:
+                    missing[ch].append(d)
+    for ch, owners in missing.items():
+        warnings.append(
+            f"El carácter «{ch}» de {', '.join(owners)} no está en el alfabeto de relleno y "
+            f"delatará la palabra. Agrégalo al campo de caracteres especiales."
+        )
+
+    return Prepared(words_display, words_clean, filler_chars, dirs, warnings)
+
+
+# ----------------------------
+# Colocación
+# ----------------------------
+def _candidates(rows, cols, n, dirs):
+    out = []
+    for key in dirs:
+        dr, dc = DIRS[key]
+        for r in range(rows):
+            er = r + dr * (n - 1)
+            if not 0 <= er < rows:
+                continue
+            for c in range(cols):
+                ec = c + dc * (n - 1)
+                if 0 <= ec < cols:
+                    out.append((r, c, dr, dc))
+    return out
+
+
+def _place_all(order, rows, cols, dirs, rng):
+    """Coloca las palabras en `order`. Devuelve (grid, placed, palabra_que_falló)."""
+    grid = [["" for _ in range(cols)] for _ in range(rows)]
+    placed = []
+    for w in order:
+        cands = _candidates(rows, cols, len(w), dirs)
+        rng.shuffle(cands)
+        for r, c, dr, dc in cands:
+            if not can_place(grid, w, r, c, dr, dc):
+                continue
+            # Al menos una celda nueva: una palabra no puede quedar entera
+            # encima de letras de otras palabras.
+            if all(grid[r + dr * i][c + dc * i] for i in range(len(w))):
+                continue
+            placed.append((w, place_word(grid, w, r, c, dr, dc)))
+            break
+        else:
+            return grid, placed, w
+    return grid, placed, None
+
+
+def _illegal_copies(grid, placed):
+    """Copias de palabras que no son su colocación ni están dentro de otra palabra."""
+    cells_of = {w: set(coords) for w, coords in placed}
+    bad = []
+    for w, coords in placed:
+        own = tuple(sorted(coords))
+        for occ in find_occurrences(grid, w):
+            if occ == own:
+                continue
+            occ_set = set(occ)
+            if any(o != w and occ_set <= cells for o, cells in cells_of.items()):
+                continue  # dentro de otra palabra (avisado en 2e)
+            bad.append((w, occ))
+    return bad
+
+
+def _fix_copies(grid, placed, filler_chars, rng):
+    """Cambia letras de relleno hasta que no haya copias. False si hay que reiniciar."""
+    word_cells = {rc for _, coords in placed for rc in coords}
+    alphabet = list(dict.fromkeys(filler_chars))
+    for _ in range(MAX_FILL_FIXES):
+        bad = _illegal_copies(grid, placed)
+        if not bad:
+            return True
+        _, occ = bad[0]
+        free = [rc for rc in occ if rc not in word_cells]
+        if not free:
+            return False  # copia hecha solo con letras de palabras colocadas
+        r, c = rng.choice(free)
+        grid[r][c] = rng.choice([ch for ch in alphabet if ch != grid[r][c]])
+    return False
+
+
 # ----------------------------
 # Generator
 # ----------------------------
-def generate_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragments: int, seed=None):
-    """Genera un puzzle. Con la misma `seed` se obtiene siempre el mismo puzzle.
+def create_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragments: int, seed=None) -> PuzzleResult:
+    """Genera un puzzle validado. Lanza PuzzleError si no se puede.
 
-    Si `seed` es None, la instancia de Random se inicializa desde el sistema
-    operativo (no se usa ni se altera el `random` global).
+    Con la misma `seed` se obtiene siempre el mismo puzzle. Si `seed` es None,
+    la instancia de Random se inicializa desde el sistema operativo (no se usa
+    ni se altera el `random` global).
     """
+    prep = prepare_words(words, rows, cols, allowed_dirs, extra_chars)
     rng = random.Random(seed)
 
-    grid = [["" for _ in range(cols)] for _ in range(rows)]
+    # De la más larga a la más corta; empates en el orden de entrada.
+    order = sorted(prep.words_clean, key=len, reverse=True)
 
-    # Keep original for display
-    words_display = [w.strip() for w in words if w.strip()]
+    failed_words, copy_failures = [], 0
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        grid, placed, failed = _place_all(order, rows, cols, prep.allowed_dirs, rng)
+        if failed is not None:
+            if failed not in failed_words:
+                failed_words.append(failed)
+            continue
 
-    # Remove spaces only for grid placement
-    words_clean = [w.replace(" ", "").strip() for w in words if w.strip()]
+        if decoy_fragments > 0:
+            add_decoy_fragments(grid, placed, decoy_fragments, prep.filler_chars, rng=rng)
+        fill_empty(grid, prep.filler_chars, rng=rng)
 
-    words_up = [w.upper() for w in words_clean if len(w) <= max(rows, cols)]
+        if not _fix_copies(grid, placed, prep.filler_chars, rng):
+            copy_failures += 1
+            continue
 
-    filler_chars = string.ascii_uppercase + (extra_chars.upper() if extra_chars else "")
+        return PuzzleResult(grid, placed, prep.words_display, prep.warnings, attempt)
 
-    placed = []
-    for w in words_up:
-        placed_ok = False
-        tries = 0
-        dirs_cycle = allowed_dirs[:] if allowed_dirs else list(DIRS.keys())
-        rng.shuffle(dirs_cycle)
-        while not placed_ok and tries < 300:
-            tries += 1
-            dr_key = rng.choice(dirs_cycle)
-            dr, dc = DIRS[dr_key]
-            r0 = rng.randrange(rows)
-            c0 = rng.randrange(cols)
-            if can_place(grid, w, r0, c0, dr, dc):
-                coords = place_word(grid, w, r0, c0, dr, dc)
-                placed.append((w, coords))
-                placed_ok = True
+    display_of = dict(zip(prep.words_clean, prep.words_display))
+    errors = []
+    if failed_words:
+        errors.append(
+            f"No se pudieron colocar en {MAX_ATTEMPTS} intentos: "
+            + ", ".join(display_of[w] for w in failed_words)
+            + ". Prueba una cuadrícula más grande, más direcciones o menos palabras."
+        )
+    if copy_failures:
+        errors.append(
+            f"En {copy_failures} intentos no se pudieron evitar copias repetidas de alguna palabra."
+        )
+    raise PuzzleError(errors)
 
-    if decoy_fragments > 0:
-        add_decoy_fragments(grid, placed, decoy_fragments, filler_chars, rng=rng)
 
-    fill_empty(grid, filler_chars, rng=rng)
-
-    return grid, placed, words_display
+def generate_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragments: int, seed=None):
+    """Compatibilidad: devuelve (grid, placed, words_display). Lanza PuzzleError."""
+    result = create_puzzle(words, rows, cols, allowed_dirs, extra_chars, decoy_fragments, seed=seed)
+    return result.grid, result.placed, result.words_display

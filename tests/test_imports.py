@@ -39,5 +39,5 @@ def test_app_se_importa_sin_errores():
     import motor
     import pdf
 
-    assert app.generate_puzzle is motor.generate_puzzle
+    assert app.create_puzzle is motor.create_puzzle
     assert app.generate_pdf is pdf.generate_pdf
