@@ -1,7 +1,8 @@
 """Snapshots deterministas del comportamiento actual de generate_puzzle.
 
-Cada caso fija random.seed(N), genera el puzzle y compara la cuadrícula, las
-posiciones (placed) y la lista impresa con tests/snapshots/<caso>.json.
+Cada caso genera el puzzle con seed=N y compara la cuadrícula, las posiciones
+(placed), la lista impresa, los avisos y el número de intentos con
+tests/snapshots/<caso>.json.
 
 Si un cambio en el generador es INTENCIONAL, regenera los snapshots con:
 
@@ -16,13 +17,15 @@ from pathlib import Path
 
 import pytest
 
+import motor
 from cases import CASES, resolve
 
 SNAPSHOT_DIR = Path(__file__).resolve().parent / "snapshots"
 UPDATE = os.environ.get("UPDATE_SNAPSHOTS") == "1"
 
 
-def _serialize(case_name, case, extra_chars, allowed_dirs, decoys, grid, placed, words_display):
+def _serialize(case_name, case, extra_chars, allowed_dirs, decoys, result):
+    grid, placed, words_display = result.grid, result.placed, result.words_display
     for row in grid:
         for cell in row:
             assert len(cell) == 1 and cell != " ", f"celda inesperada: {cell!r}"
@@ -43,6 +46,8 @@ def _serialize(case_name, case, extra_chars, allowed_dirs, decoys, grid, placed,
         "grid": [" ".join(row) for row in grid],
         "placed": [{"word": w, "coords": [list(rc) for rc in coords]} for w, coords in placed],
         "words_display": words_display,
+        "warnings": result.warnings,
+        "attempts": result.attempts,
     }
 
 
@@ -50,10 +55,10 @@ def _serialize(case_name, case, extra_chars, allowed_dirs, decoys, grid, placed,
 def test_snapshot(motor_mod, seeded, case_name):
     case = CASES[case_name]
     allowed_dirs, decoys, extra_chars = resolve(motor_mod, case)
-    grid, placed, words_display = seeded(
-        case["seed"], case["words"], case["rows"], case["cols"], allowed_dirs, extra_chars, decoys
+    result = motor.create_puzzle(
+        case["words"], case["rows"], case["cols"], allowed_dirs, extra_chars, decoys, seed=case["seed"]
     )
-    actual = _serialize(case_name, case, extra_chars, allowed_dirs, decoys, grid, placed, words_display)
+    actual = _serialize(case_name, case, extra_chars, allowed_dirs, decoys, result)
 
     path = SNAPSHOT_DIR / f"{case_name}.json"
     if UPDATE:

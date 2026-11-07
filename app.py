@@ -3,7 +3,7 @@ st.set_page_config(page_title="Word Search Generator", layout="centered")
 
 import secrets
 
-from motor import DIRS, DIFFICULTY_PRESETS, clean_specials_input, generate_puzzle
+from motor import DIRS, DIFFICULTY_PRESETS, PuzzleError, clean_specials_input, create_puzzle
 from pdf import generate_pdf
 
 # ----------------------------
@@ -61,17 +61,27 @@ if st.button("Generar sopa"):
     else:
         seed = secrets.randbelow(10**9)
 
-    grid, placed, words_display = generate_puzzle(
-        words=words_list,
-        rows=rows,
-        cols=cols,
-        allowed_dirs=allowed_dirs,
-        extra_chars=custom_specials,
-        decoy_fragments=decoys,
-        seed=seed
-    )
+    try:
+        result = create_puzzle(
+            words=words_list,
+            rows=rows,
+            cols=cols,
+            allowed_dirs=allowed_dirs,
+            extra_chars=custom_specials,
+            decoy_fragments=decoys,
+            seed=seed
+        )
+    except PuzzleError as e:
+        for message in e.errors:
+            st.error(message)
+        st.stop()
+
+    grid, placed, words_display = result.grid, result.placed, result.words_display
 
     st.write(f"Semilla usada: {seed}")
+    st.write(f"{len(placed)} de {len(words_display)} palabras colocadas")
+    for message in result.warnings:
+        st.warning(message)
 
     st.markdown("### 🧩 Vista previa")
     # collect solution coords
