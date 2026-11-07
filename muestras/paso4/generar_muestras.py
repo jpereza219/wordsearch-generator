@@ -40,9 +40,8 @@ MUNICIPIOS_FM = [
 
 # FRANCISCO MORAZÁN (16 letras) no cabe en 15x15: la validación 2c lo rechaza,
 # así que la muestra de 15x15 usa los otros 17 departamentos.
-# Semillas elegidas para que aparezcan las 8 direcciones y revisar todas las
-# orientaciones de banda (con estas listas densas, muchas semillas no tienen
-# ninguna diagonal; ver PR del paso 4).
+# Desde el paso 3b las palabras se reparten entre las 8 direcciones en
+# cualquier semilla; se conservan las semillas de las muestras del paso 4.
 CASOS = {
     "15x15_departamentos": dict(
         words=[w for w in DEPARTAMENTOS if w != "FRANCISCO MORAZÁN"], size=15, seed=10
