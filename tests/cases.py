@@ -52,12 +52,12 @@ CASES = {
 }
 
 
-def resolve(app, case):
+def resolve(motor, case):
     """Devuelve (allowed_dirs, decoys, extra_chars) tal como los calcularía la UI."""
     if case["difficulty"] == "Custom":
         allowed_dirs, decoys = list(case["allowed_dirs"]), case["decoys"]
     else:
-        preset_dirs, preset_decoys = app.DIFFICULTY_PRESETS[case["difficulty"]]
+        preset_dirs, preset_decoys = motor.DIFFICULTY_PRESETS[case["difficulty"]]
         allowed_dirs, decoys = list(preset_dirs), preset_decoys
-    extra_chars = app.clean_specials_input(case["specials_ui"])
+    extra_chars = motor.clean_specials_input(case["specials_ui"])
     return allowed_dirs, decoys, extra_chars

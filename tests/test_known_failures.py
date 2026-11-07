@@ -31,10 +31,10 @@ def _occurrences(grid, word, dirs):
 @pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
-    reason="Problema 1: una palabra que no cabe se omite sin aviso y sigue en la lista impresa (app.py:100, 105)",
+    reason="Problema 1: una palabra que no cabe se omite sin aviso y sigue en la lista impresa (motor.generate_puzzle)",
 )
 def test_problema1_palabra_que_no_cabe_no_se_omite_en_silencio(seeded):
-    # FRANCISCOMORAZÁN tiene 16 celdas y la cuadrícula es 15x15: se descarta en app.py:105.
+    # FRANCISCOMORAZÁN tiene 16 celdas y la cuadrícula es 15x15: se descarta en motor.generate_puzzle.
     words = ["FRANCISCO MORAZÁN", "COPÁN"]
     grid, placed, words_display = seeded(0, words, 15, 15, ["H", "V"], "", 0)
     placed_words = {w for w, _ in placed}
@@ -63,11 +63,11 @@ def test_problema5_nfd_ocupa_lo_mismo_que_nfc(seeded):
     raises=AssertionError,
     reason="Problema 6: el relleno aleatorio puede formar una copia extra de una palabra corta",
 )
-def test_problema6_sin_copias_extra(app, seeded):
+def test_problema6_sin_copias_extra(motor_mod, seeded):
     words = ["SOL", "MAR", "RÍO", "PAN", "OSO", "ORO", "LUZ", "AVE", "SAL", "TÉ"]
     # Con la semilla 0, LUZ aparece 3 veces en la cuadrícula (verificado en la auditoría).
     grid, placed, _ = seeded(0, words, 15, 15, ALL_DIRS, "", 0)
-    vectors = list(app.DIRS.values())
+    vectors = list(motor_mod.DIRS.values())
     duplicated = {w: len(_occurrences(grid, w, vectors)) for w, _ in placed}
     duplicated = {w: n for w, n in duplicated.items() if n > 1}
     assert not duplicated, f"palabras con copias extra: {duplicated}"
@@ -76,9 +76,9 @@ def test_problema6_sin_copias_extra(app, seeded):
 @pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
-    reason="Custom sin direcciones usa las 8 direcciones sin avisar (app.py:113)",
+    reason="Custom sin direcciones usa las 8 direcciones sin avisar (motor.generate_puzzle, dirs_cycle)",
 )
-def test_custom_sin_direcciones_no_usa_las_8_en_silencio(app, seeded):
+def test_custom_sin_direcciones_no_usa_las_8_en_silencio(motor_mod, seeded):
     words = ["HONDURAS", "BALEADA", "MARIMBA", "IGUANA", "TAMALES"]
     try:
         grid, placed, _ = seeded(0, words, 15, 15, [], "", 0)

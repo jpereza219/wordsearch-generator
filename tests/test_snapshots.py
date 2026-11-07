@@ -47,9 +47,9 @@ def _serialize(case_name, case, extra_chars, allowed_dirs, decoys, grid, placed,
 
 
 @pytest.mark.parametrize("case_name", sorted(CASES))
-def test_snapshot(app, seeded, case_name):
+def test_snapshot(motor_mod, seeded, case_name):
     case = CASES[case_name]
-    allowed_dirs, decoys, extra_chars = resolve(app, case)
+    allowed_dirs, decoys, extra_chars = resolve(motor_mod, case)
     grid, placed, words_display = seeded(
         case["seed"], case["words"], case["rows"], case["cols"], allowed_dirs, extra_chars, decoys
     )
