@@ -1,0 +1,386 @@
+{
+  "case": "paises_15x15_custom",
+  "config": {
+    "seed": 101,
+    "rows": 15,
+    "cols": 15,
+    "difficulty": "Custom",
+    "allowed_dirs": [
+      "H",
+      "HR",
+      "V",
+      "VR",
+      "D1",
+      "D4"
+    ],
+    "decoy_fragments": 6,
+    "specials_ui": "ÑÁÉÍÓÚÜ",
+    "extra_chars": "ÑÁÉÍÓÚÜ",
+    "words": [
+      "BELICE",
+      "COLOMBIA",
+      "CUBA",
+      "EL SALVADOR",
+      "GUATEMALA",
+      "ISLAS CAIMÁN",
+      "JAMAICA",
+      "MÉXICO",
+      "NICARAGUA"
+    ]
+  },
+  "grid": [
+    "Z A T L I Ü Z D I W F L A N T",
+    "A L D Y X Ü M Ó S J O X I L A",
+    "Ú Í P T O E C É L N O U B E Ñ",
+    "É J A M A I C A A I C W M C W",
+    "Ú C E X W U E D S C I F O Í R",
+    "É O I Y T O R N C A X L L M O",
+    "G I Ü S R G J W A R É B O L D",
+    "U Ñ U S X V G J I A M Ñ C Ü A",
+    "A O Á B D B I T M G X M P V V",
+    "T K E T E F Á T Á U R J W B L",
+    "E O P C A L S Z N A F Í C V A",
+    "M G Z Y Y V I Ñ E G Q U T Ó S",
+    "A E Ñ M C J B C O Ú B B M K L",
+    "L H F K A S M Y E A Í C M E E",
+    "A K S V B K F M R C I L W A D"
+  ],
+  "placed": [
+    {
+      "word": "BELICE",
+      "coords": [
+        [
+          8,
+          3
+        ],
+        [
+          9,
+          4
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          11,
+          6
+        ],
+        [
+          12,
+          7
+        ],
+        [
+          13,
+          8
+        ]
+      ]
+    },
+    {
+      "word": "COLOMBIA",
+      "coords": [
+        [
+          7,
+          12
+        ],
+        [
+          6,
+          12
+        ],
+        [
+          5,
+          12
+        ],
+        [
+          4,
+          12
+        ],
+        [
+          3,
+          12
+        ],
+        [
+          2,
+          12
+        ],
+        [
+          1,
+          12
+        ],
+        [
+          0,
+          12
+        ]
+      ]
+    },
+    {
+      "word": "CUBA",
+      "coords": [
+        [
+          10,
+          12
+        ],
+        [
+          11,
+          11
+        ],
+        [
+          12,
+          10
+        ],
+        [
+          13,
+          9
+        ]
+      ]
+    },
+    {
+      "word": "ELSALVADOR",
+      "coords": [
+        [
+          13,
+          14
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          11,
+          14
+        ],
+        [
+          10,
+          14
+        ],
+        [
+          9,
+          14
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          7,
+          14
+        ],
+        [
+          6,
+          14
+        ],
+        [
+          5,
+          14
+        ],
+        [
+          4,
+          14
+        ]
+      ]
+    },
+    {
+      "word": "GUATEMALA",
+      "coords": [
+        [
+          6,
+          0
+        ],
+        [
+          7,
+          0
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          11,
+          0
+        ],
+        [
+          12,
+          0
+        ],
+        [
+          13,
+          0
+        ],
+        [
+          14,
+          0
+        ]
+      ]
+    },
+    {
+      "word": "ISLASCAIMÁN",
+      "coords": [
+        [
+          0,
+          8
+        ],
+        [
+          1,
+          8
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          3,
+          8
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          5,
+          8
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          7,
+          8
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          9,
+          8
+        ],
+        [
+          10,
+          8
+        ]
+      ]
+    },
+    {
+      "word": "JAMAICA",
+      "coords": [
+        [
+          3,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          7
+        ]
+      ]
+    },
+    {
+      "word": "MÉXICO",
+      "coords": [
+        [
+          7,
+          10
+        ],
+        [
+          6,
+          10
+        ],
+        [
+          5,
+          10
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          3,
+          10
+        ],
+        [
+          2,
+          10
+        ]
+      ]
+    },
+    {
+      "word": "NICARAGUA",
+      "coords": [
+        [
+          2,
+          9
+        ],
+        [
+          3,
+          9
+        ],
+        [
+          4,
+          9
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          7,
+          9
+        ],
+        [
+          8,
+          9
+        ],
+        [
+          9,
+          9
+        ],
+        [
+          10,
+          9
+        ]
+      ]
+    }
+  ],
+  "words_display": [
+    "BELICE",
+    "COLOMBIA",
+    "CUBA",
+    "EL SALVADOR",
+    "GUATEMALA",
+    "ISLAS CAIMÁN",
+    "JAMAICA",
+    "MÉXICO",
+    "NICARAGUA"
+  ]
+}
