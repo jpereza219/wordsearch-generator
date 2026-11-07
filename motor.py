@@ -9,8 +9,11 @@ Flujo de create_puzzle():
      caben en ninguna dirección permitida (error), sin direcciones (error),
      palabras contenidas en otras (aviso), letras fuera del alfabeto de relleno
      (aviso).
-  3. Colocación de la más larga a la más corta, probando TODAS las posiciones
-     válidas en orden barajado. Si una palabra no cabe, se reinicia el puzzle.
+  3. Colocación de la más larga a la más corta. Cada palabra recibe una
+     dirección preferida (reparto parejo entre las permitidas) y prueba TODAS
+     sus posiciones en orden barajado; si no cabe, prueba las demás direcciones
+     (las menos usadas primero). Si una palabra no cabe en ninguna, o si faltan
+     diagonales o palabras al revés pudiendo haberlas, se reinicia el puzzle.
   4. Señuelos y relleno (igual que antes).
   5. Verificación de copias: cada palabra debe aparecer exactamente una vez
      (salvo las contenidas en otras). Las copias con celdas de relleno se
@@ -48,6 +51,11 @@ DIFFICULTY_PRESETS = {
 }
 
 MIN_WORD_LEN = 3
+
+# Direcciones "al revés": se leen de derecha a izquierda o de abajo arriba
+# (←, ↑, ↖, ↙). Las otras cuatro (→, ↓, ↘, ↗) se leen hacia delante.
+REVERSED_DIRS = ("HR", "VR", "D2", "D4")
+DIAGONAL_DIRS = ("D1", "D2", "D3", "D4")
 
 # Puzzles completos que se intentan antes de rendirse. Cada intento reinicia la
 # cuadrícula con el mismo rng (que sigue avanzando). Ver PR del paso 3.
@@ -306,25 +314,103 @@ def _candidates(rows, cols, n, dirs):
     return out
 
 
+def _fits(n, key, rows, cols):
+    """¿Cabe una palabra de `n` letras en la dirección `key`?"""
+    return n <= max_word_length(rows, cols, [key])
+
+
+def assign_directions(order, rows, cols, dirs, rng):
+    """Dirección preferida de cada palabra, repartidas de la forma más pareja posible.
+
+    Las direcciones se barajan con rng y se reparten en ronda, de la palabra más
+    larga a la más corta. Cada palabra va a la dirección con menos palabras
+    asignadas entre aquellas en las que cabe (empates: orden barajado). Si todas
+    caben en todas, el número de palabras por dirección difiere como máximo en 1.
+    """
+    rotation = list(dirs)
+    rng.shuffle(rotation)
+    counts = {d: 0 for d in rotation}
+    preferred = []
+    for w in order:
+        fitting = [d for d in rotation if _fits(len(w), d, rows, cols)]
+        choice = min(fitting, key=lambda d: (counts[d], rotation.index(d)))
+        counts[choice] += 1
+        preferred.append(choice)
+    return preferred
+
+
+def _try_direction(grid, w, key, rows, cols, rng):
+    cands = _candidates(rows, cols, len(w), [key])
+    rng.shuffle(cands)
+    for r, c, dr, dc in cands:
+        if not can_place(grid, w, r, c, dr, dc):
+            continue
+        # Al menos una celda nueva: una palabra no puede quedar entera
+        # encima de letras de otras palabras.
+        if all(grid[r + dr * i][c + dc * i] for i in range(len(w))):
+            continue
+        return place_word(grid, w, r, c, dr, dc)
+    return None
+
+
 def _place_all(order, rows, cols, dirs, rng):
-    """Coloca las palabras en `order`. Devuelve (grid, placed, palabra_que_falló)."""
+    """Coloca las palabras en `order`. Devuelve (grid, placed, palabra_que_falló).
+
+    Cada palabra prueba primero todas las posiciones de su dirección preferida
+    (barajadas). Si no hay lugar, prueba las demás direcciones permitidas,
+    empezando por las menos usadas hasta ese momento (empates al azar).
+    """
     grid = [["" for _ in range(cols)] for _ in range(rows)]
     placed = []
-    for w in order:
-        cands = _candidates(rows, cols, len(w), dirs)
-        rng.shuffle(cands)
-        for r, c, dr, dc in cands:
-            if not can_place(grid, w, r, c, dr, dc):
-                continue
-            # Al menos una celda nueva: una palabra no puede quedar entera
-            # encima de letras de otras palabras.
-            if all(grid[r + dr * i][c + dc * i] for i in range(len(w))):
-                continue
-            placed.append((w, place_word(grid, w, r, c, dr, dc)))
-            break
+    used = {d: 0 for d in dirs}
+    preferred = assign_directions(order, rows, cols, dirs, rng)
+    for w, pref in zip(order, preferred):
+        others = [d for d in dirs if d != pref]
+        rng.shuffle(others)
+        others.sort(key=lambda d: used[d])  # estable: el barajado decide los empates
+        for key in [pref] + others:
+            coords = _try_direction(grid, w, key, rows, cols, rng)
+            if coords is not None:
+                placed.append((w, coords))
+                used[key] += 1
+                break
         else:
             return grid, placed, w
     return grid, placed, None
+
+
+def direction_of(coords):
+    """Clave de dirección (H, HR, …) de una palabra colocada."""
+    (r1, c1), (r2, c2) = coords[0], coords[1]
+    return _DIR_BY_VECTOR[(r2 - r1, c2 - c1)]
+
+
+_DIR_BY_VECTOR = {v: k for k, v in DIRS.items()}
+
+
+def _variety_goals(order, rows, cols, dirs):
+    """Qué exigir a cada intento: (al menos una diagonal, al menos una al revés).
+
+    Solo se exige cuando hay al menos tantas palabras como direcciones permitidas
+    y alguna palabra cabe en una dirección de ese tipo.
+    """
+    if len(order) < len(dirs):
+        return False, False
+
+    def possible(kind):
+        return any(_fits(len(w), d, rows, cols) for w in order for d in dirs if d in kind)
+
+    return possible(DIAGONAL_DIRS), possible(REVERSED_DIRS)
+
+
+def _has_variety(placed, goals):
+    need_diag, need_rev = goals
+    used = {direction_of(coords) for _, coords in placed}
+    if need_diag and not used & set(DIAGONAL_DIRS):
+        return False
+    if need_rev and not used & set(REVERSED_DIRS):
+        return False
+    return True
 
 
 def _illegal_copies(grid, placed):
@@ -376,13 +462,20 @@ def create_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragm
     # De la más larga a la más corta; empates en el orden de entrada.
     order = sorted(prep.words_clean, key=len, reverse=True)
 
+    goals = _variety_goals(order, rows, cols, prep.allowed_dirs)
+
     failed_words, copy_failures = [], 0
+    fallback = None  # primer puzzle válido, por si nunca se logra la variedad
     for attempt in range(1, MAX_ATTEMPTS + 1):
         grid, placed, failed = _place_all(order, rows, cols, prep.allowed_dirs, rng)
         if failed is not None:
             if failed not in failed_words:
                 failed_words.append(failed)
             continue
+
+        varied = _has_variety(placed, goals)
+        if not varied and fallback is not None:
+            continue  # ya hay un puzzle válido de respaldo; se busca uno con variedad
 
         if decoy_fragments > 0:
             add_decoy_fragments(grid, placed, decoy_fragments, prep.filler_chars, rng=rng)
@@ -392,7 +485,18 @@ def create_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragm
             copy_failures += 1
             continue
 
-        return PuzzleResult(grid, placed, prep.words_display, prep.warnings, attempt)
+        result = PuzzleResult(grid, placed, prep.words_display, list(prep.warnings), attempt)
+        if varied:
+            return result
+        fallback = result
+
+    if fallback is not None:
+        fallback.warnings.append(
+            "No se logró que hubiera palabras en diagonal y al revés en "
+            f"{MAX_ATTEMPTS} intentos; revisa el reparto de direcciones."
+        )
+        fallback.attempts = MAX_ATTEMPTS
+        return fallback
 
     display_of = dict(zip(prep.words_clean, prep.words_display))
     errors = []
