@@ -12,8 +12,8 @@ from cases import CASES, resolve
 SEEDS = range(25)
 
 
-def _generate(app, seeded, case, seed):
-    allowed_dirs, decoys, extra_chars = resolve(app, case)
+def _generate(motor_mod, seeded, case, seed):
+    allowed_dirs, decoys, extra_chars = resolve(motor_mod, case)
     grid, placed, words_display = seeded(
         seed, case["words"], case["rows"], case["cols"], allowed_dirs, extra_chars, decoys
     )
@@ -25,18 +25,18 @@ def _params():
 
 
 @pytest.mark.parametrize("case_name,seed", _params())
-def test_dimensiones(app, seeded, case_name, seed):
+def test_dimensiones(motor_mod, seeded, case_name, seed):
     case = CASES[case_name]
-    grid, *_ = _generate(app, seeded, case, seed)
+    grid, *_ = _generate(motor_mod, seeded, case, seed)
     assert len(grid) == case["rows"]
     assert all(len(row) == case["cols"] for row in grid)
     assert all(isinstance(cell, str) and len(cell) == 1 for row in grid for cell in row)
 
 
 @pytest.mark.parametrize("case_name,seed", _params())
-def test_palabras_colocadas_en_sus_posiciones(app, seeded, case_name, seed):
+def test_palabras_colocadas_en_sus_posiciones(motor_mod, seeded, case_name, seed):
     case = CASES[case_name]
-    grid, placed, *_ = _generate(app, seeded, case, seed)
+    grid, placed, *_ = _generate(motor_mod, seeded, case, seed)
     expected_words = {w.replace(" ", "").strip().upper() for w in case["words"]}
     for word, coords in placed:
         assert word in expected_words
@@ -45,10 +45,10 @@ def test_palabras_colocadas_en_sus_posiciones(app, seeded, case_name, seed):
 
 
 @pytest.mark.parametrize("case_name,seed", _params())
-def test_solo_direcciones_habilitadas(app, seeded, case_name, seed):
+def test_solo_direcciones_habilitadas(motor_mod, seeded, case_name, seed):
     case = CASES[case_name]
-    grid, placed, _, allowed_dirs, _ = _generate(app, seeded, case, seed)
-    allowed_vectors = {app.DIRS[k] for k in allowed_dirs}
+    grid, placed, _, allowed_dirs, _ = _generate(motor_mod, seeded, case, seed)
+    allowed_vectors = {motor_mod.DIRS[k] for k in allowed_dirs}
     for word, coords in placed:
         assert len(coords) >= 2, "las palabras de prueba tienen 2+ letras"
         dr, dc = coords[1][0] - coords[0][0], coords[1][1] - coords[0][1]
@@ -58,15 +58,15 @@ def test_solo_direcciones_habilitadas(app, seeded, case_name, seed):
 
 
 @pytest.mark.parametrize("case_name,seed", _params())
-def test_relleno_solo_az_mas_especiales(app, seeded, case_name, seed):
+def test_relleno_solo_az_mas_especiales(motor_mod, seeded, case_name, seed):
     """Las celdas que no pertenecen a ninguna palabra usan solo A–Z + especiales.
 
     Nota: los señuelos (decoys) toman letras de las palabras ya colocadas
-    (app.py:66). En estas configuraciones todas las letras de las palabras
+    (motor.py, add_decoy_fragments). En estas configuraciones todas las letras de las palabras
     están en A–Z + especiales, así que la propiedad se cumple igualmente.
     """
     case = CASES[case_name]
-    grid, placed, _, _, extra_chars = _generate(app, seeded, case, seed)
+    grid, placed, _, _, extra_chars = _generate(motor_mod, seeded, case, seed)
     alphabet = set(string.ascii_uppercase) | set(extra_chars.upper())
     word_cells = {rc for _, coords in placed for rc in coords}
     for r, row in enumerate(grid):
