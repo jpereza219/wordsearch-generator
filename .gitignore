@@ -19,8 +19,9 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# Salidas generadas
+# Salidas generadas (las muestras de revisión sí se versionan)
 *.pdf
+!muestras/**/*.pdf
 
 # Editores / sistema
 .vscode/

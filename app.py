@@ -1,10 +1,11 @@
 import streamlit as st
 st.set_page_config(page_title="Word Search Generator", layout="centered")
 
+import base64
 import secrets
 
 from motor import DIRS, DIFFICULTY_PRESETS, PuzzleError, clean_specials_input, create_puzzle
-from pdf import generate_pdf
+from salidas import file_names, grid_svg, grid_text, puzzle_files, puzzle_zip
 
 # ----------------------------
 # Streamlit UI
@@ -72,11 +73,28 @@ if st.button("Generar sopa"):
             seed=seed
         )
     except PuzzleError as e:
+        st.session_state.pop("puzzle", None)
         for message in e.errors:
             st.error(message)
         st.stop()
 
+    # Se guarda todo lo generado para que la vista previa no desaparezca al
+    # pulsar un botón de descarga (cada clic vuelve a ejecutar el script).
+    files = puzzle_files(result.grid, result.placed, result.words_display, seed)
+    st.session_state["puzzle"] = {
+        "seed": seed,
+        "result": result,
+        "files": files,
+        "zip": puzzle_zip(files),
+        "text": grid_text(result.grid),
+        "solution_svg": grid_svg(result.grid, result.placed, solution=True),
+    }
+
+puzzle = st.session_state.get("puzzle")
+if puzzle:
+    seed, result = puzzle["seed"], puzzle["result"]
     grid, placed, words_display = result.grid, result.placed, result.words_display
+    names = file_names(seed)
 
     st.write(f"Semilla usada: {seed}")
     st.write(f"{len(placed)} de {len(words_display)} palabras colocadas")
@@ -92,9 +110,9 @@ if st.button("Generar sopa"):
 
     # build HTML table with bold solution letters
     html = "<table style='font-family: monospace; border-collapse: collapse;'>"
-    for r in range(rows):
+    for r in range(len(grid)):
         html += "<tr>"
-        for c in range(cols):
+        for c in range(len(grid[0])):
             ch = grid[r][c]
             if (r, c) in solution_coords:
                 html += f"<td style='padding:3px;'><b>{ch}</b></td>"
@@ -105,10 +123,26 @@ if st.button("Generar sopa"):
 
     st.markdown(html, unsafe_allow_html=True)
 
-    pdf_buffer = generate_pdf(grid, placed, [w.upper() for w in words_display])
     st.download_button(
         "🗕 Descargar PDF (puzzle + solución)",
-        data=pdf_buffer,
-        file_name="sopa_de_letras.pdf",
+        data=puzzle["files"][names["pdf"]],
+        file_name=names["pdf"],
         mime="application/pdf"
+    )
+    st.download_button(
+        "🗂 Descargar todo (ZIP)",
+        data=puzzle["zip"],
+        file_name=f"s{seed}_sopa.zip",
+        mime="application/zip"
+    )
+
+    st.markdown("### 📋 Cuadrícula en texto")
+    st.caption("Una fila por línea, letras separadas por un espacio. Usa el botón de copiar.")
+    st.code(puzzle["text"], language=None)
+
+    st.markdown("### ✅ Solución")
+    svg_b64 = base64.b64encode(puzzle["solution_svg"].encode("utf-8")).decode("ascii")
+    st.markdown(
+        f'<img alt="Solución" style="max-width:100%;" src="data:image/svg+xml;base64,{svg_b64}">',
+        unsafe_allow_html=True,
     )
