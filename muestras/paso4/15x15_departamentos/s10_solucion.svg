@@ -1,23 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="374.4pt" height="374.4pt" viewBox="0 0 374.4 374.4">
 <rect class="marco" x="0.48" y="0.48" width="373.44" height="373.44" fill="none" stroke="#000" stroke-width="0.96"/>
 <g class="bandas">
-<rect class="banda" data-palabra="ISLASDELABAHÍA" x="67.2" y="190.8" width="336" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(90 235.2 199.2)"/>
-<rect class="banda" data-palabra="GRACIASADIOS" x="79.2" y="274.8" width="288" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(180 223.2 283.2)"/>
-<rect class="banda" data-palabra="SANTABÁRBARA" x="-100.8" y="142.8" width="288" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(-90 43.2 151.2)"/>
-<rect class="banda" data-palabra="OCOTEPEQUE" x="34.465" y="142.8" width="329.47" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(45 199.2 151.2)"/>
-<rect class="banda" data-palabra="ATLÁNTIDA" x="31.2" y="346.8" width="216" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(0 139.2 355.2)"/>
-<rect class="banda" data-palabra="COMAYAGUA" x="-32.565" y="226.8" width="295.529" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(-45 115.2 235.2)"/>
-<rect class="banda" data-palabra="CHOLUTECA" x="-88.8" y="154.8" width="216" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(-90 19.2 163.2)"/>
-<rect class="banda" data-palabra="ELPARAÍSO" x="79.2" y="10.8" width="216" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(0 187.2 19.2)"/>
-<rect class="banda" data-palabra="INTIBUCÁ" x="259.2" y="94.8" width="192" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(90 355.2 103.2)"/>
-<rect class="banda" data-palabra="LEMPIRA" x="55.2" y="322.8" width="168" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(180 139.2 331.2)"/>
-<rect class="banda" data-palabra="OLANCHO" x="25.377" y="178.8" width="227.647" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(-135 139.2 187.2)"/>
-<rect class="banda" data-palabra="CORTÉS" x="54.347" y="142.8" width="193.706" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(135 151.2 151.2)"/>
-<rect class="banda" data-palabra="COLÓN" x="35.318" y="106.8" width="159.765" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(45 115.2 115.2)"/>
-<rect class="banda" data-palabra="COPÁN" x="227.318" y="82.8" width="159.765" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(-45 307.2 91.2)"/>
-<rect class="banda" data-palabra="LAPAZ" x="271.2" y="154.8" width="120" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(-90 331.2 163.2)"/>
-<rect class="banda" data-palabra="VALLE" x="103.2" y="298.8" width="120" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(0 163.2 307.2)"/>
-<rect class="banda" data-palabra="YORO" x="235.2" y="166.8" width="96" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.25" transform="rotate(90 283.2 175.2)"/>
+<rect class="banda" data-palabra="ISLASDELABAHÍA" x="67.2" y="190.8" width="336" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(90 235.2 199.2)"/>
+<rect class="banda" data-palabra="GRACIASADIOS" x="79.2" y="274.8" width="288" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(180 223.2 283.2)"/>
+<rect class="banda" data-palabra="SANTABÁRBARA" x="-100.8" y="142.8" width="288" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(-90 43.2 151.2)"/>
+<rect class="banda" data-palabra="OCOTEPEQUE" x="34.465" y="142.8" width="329.47" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(45 199.2 151.2)"/>
+<rect class="banda" data-palabra="ATLÁNTIDA" x="31.2" y="346.8" width="216" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(0 139.2 355.2)"/>
+<rect class="banda" data-palabra="COMAYAGUA" x="-32.565" y="226.8" width="295.529" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(-45 115.2 235.2)"/>
+<rect class="banda" data-palabra="CHOLUTECA" x="-88.8" y="154.8" width="216" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(-90 19.2 163.2)"/>
+<rect class="banda" data-palabra="ELPARAÍSO" x="79.2" y="10.8" width="216" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(0 187.2 19.2)"/>
+<rect class="banda" data-palabra="INTIBUCÁ" x="259.2" y="94.8" width="192" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(90 355.2 103.2)"/>
+<rect class="banda" data-palabra="LEMPIRA" x="55.2" y="322.8" width="168" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(180 139.2 331.2)"/>
+<rect class="banda" data-palabra="OLANCHO" x="25.377" y="178.8" width="227.647" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(-135 139.2 187.2)"/>
+<rect class="banda" data-palabra="CORTÉS" x="54.347" y="142.8" width="193.706" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(135 151.2 151.2)"/>
+<rect class="banda" data-palabra="COLÓN" x="35.318" y="106.8" width="159.765" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(45 115.2 115.2)"/>
+<rect class="banda" data-palabra="COPÁN" x="227.318" y="82.8" width="159.765" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(-45 307.2 91.2)"/>
+<rect class="banda" data-palabra="LAPAZ" x="271.2" y="154.8" width="120" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(-90 331.2 163.2)"/>
+<rect class="banda" data-palabra="VALLE" x="103.2" y="298.8" width="120" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(0 163.2 307.2)"/>
+<rect class="banda" data-palabra="YORO" x="235.2" y="166.8" width="96" height="16.8" rx="8.4" ry="8.4" fill="#000" fill-opacity="0.2" transform="rotate(90 283.2 175.2)"/>
 </g>
 <g class="letras" font-family="'Liberation Mono', 'Courier New', monospace" font-size="14.88" text-anchor="middle" fill="#000">
 <text x="19.2" y="24.101">I</text>

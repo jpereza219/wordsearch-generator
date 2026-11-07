@@ -21,7 +21,7 @@ FONT_RATIO = 0.62
 # oscura. Con 0.70 no se solapan, y los cruces siguen viéndose más oscuros.
 BAND_HEIGHT = 0.70
 # Opacidad de la banda (negro con alpha): en los cruces se ve más oscuro.
-BAND_ALPHA = 0.25
+BAND_ALPHA = 0.20
 # Cuánto sobresale la banda de los centros de la primera y la última celda, en celdas.
 BAND_OVERHANG = 0.5
 # Grosor del marco respecto a la celda.
