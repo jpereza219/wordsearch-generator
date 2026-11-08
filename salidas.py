@@ -18,6 +18,7 @@ from xml.sax.saxutils import escape, quoteattr
 import geometria as geo
 from ficha import ficha_json
 from motor import clean_word
+from volumenes import short_title, volume_tag
 from pdf import CAP_HEIGHT, GRID_ONLY_CELL, generate_grid_pdf, generate_pdf
 
 SVG_FONT_FAMILY = "'Liberation Mono', 'Courier New', monospace"
@@ -104,8 +105,20 @@ def grid_text(grid):
     return unicodedata.normalize("NFC", text)
 
 
-def file_names(seed):
-    p = f"s{seed}_"
+def file_prefix(seed, volume=None, puzzle=None, title=None):
+    """Prefijo de los archivos. Con volumen: v2_p07_<titulo-corto>_s<semilla>_; sin volumen: s<semilla>_."""
+    if volume and puzzle is not None:
+        parts = [volume_tag(volume), f"p{int(puzzle):02d}"]
+        short = short_title(title)
+        if short:
+            parts.append(short)
+        parts.append(f"s{seed}")
+        return "_".join(parts) + "_"
+    return f"s{seed}_"
+
+
+def file_names(seed, volume=None, puzzle=None, title=None):
+    p = file_prefix(seed, volume, puzzle, title)
     return {
         "pdf": p + "sopa_de_letras.pdf",
         "sopa_svg": p + "sopa.svg",
@@ -115,10 +128,12 @@ def file_names(seed):
         "txt": p + "cuadricula.txt",
         "autor_svg": p + "solucion_autor.svg",
         "ficha": p + "ficha.json",
+        "zip": p + "sopa.zip",
     }
 
 
-def puzzle_files(grid, placed, words_display, seed, exclude=(), hidden=(), ficha=None):
+def puzzle_files(grid, placed, words_display, seed, exclude=(), hidden=(), ficha=None,
+                 volume=None, puzzle=None, title=None):
     """Devuelve {nombre_de_archivo: bytes} con las salidas del puzzle.
 
     - Libro (6): PDF de 2 páginas, sopa.svg, solucion.svg, sopa_cuadricula.pdf,
@@ -127,10 +142,10 @@ def puzzle_files(grid, placed, words_display, seed, exclude=(), hidden=(), ficha
     - Autor: solucion_autor.svg (ocultas con contorno discontinuo y rótulo de
       uso interno) y, si se pasa `ficha`, ficha.json.
     """
-    names = file_names(seed)
+    names = file_names(seed, volume, puzzle, title)
     book_exclude = list(exclude) + list(hidden)
     files = {
-        names["pdf"]: generate_pdf(grid, placed, words_display, book_exclude).getvalue(),
+        names["pdf"]: generate_pdf(grid, placed, words_display, book_exclude, title=title).getvalue(),
         names["sopa_svg"]: grid_svg(grid).encode("utf-8"),
         names["solucion_svg"]: grid_svg(grid, placed, solution=True, exclude=book_exclude).encode("utf-8"),
         names["sopa_pdf"]: generate_grid_pdf(grid).getvalue(),

@@ -13,7 +13,7 @@ def test_motor_y_pdf_no_cargan_streamlit():
     # Se ejecuta en un proceso aparte: en esta sesión de pytest otra prueba
     # importa app.py, que sí carga streamlit.
     code = (
-        "import sys, motor, pdf, geometria, salidas, ficha\n"
+        "import sys, motor, pdf, geometria, salidas, ficha, volumenes\n"
         "cargados = sorted(m for m in sys.modules if m == 'streamlit' or m.startswith('streamlit.'))\n"
         "assert not cargados, cargados\n"
         "print('ok')\n"
