@@ -230,7 +230,13 @@ def _new_canvas(buffer, pagesize):
 
 
 def _draw_page(c, layout, title, grid, bands):
-    c.setFont(FONT_BOLD, TITLE_SIZE)
+    # El título se achica si no cabe entre los márgenes.
+    size = TITLE_SIZE
+    available = layout.page_w - 2 * MARGIN
+    width = pdfmetrics.stringWidth(title, FONT_BOLD, size)
+    if width > available:
+        size = TITLE_SIZE * available / width
+    c.setFont(FONT_BOLD, size)
     c.drawCentredString(layout.page_w / 2, layout.title_y, title)
 
     c.setFont(FONT_BOLD, LIST_TITLE_SIZE)
@@ -245,18 +251,22 @@ def _draw_page(c, layout, title, grid, bands):
     draw_grid(c, grid, layout.frame_x, layout.frame_top, layout.cell, bands)
 
 
-def generate_pdf(grid, placed, words_display, exclude=()):
+def generate_pdf(grid, placed, words_display, exclude=(), title=None):
     """PDF carta de 2 páginas: sopa y solución con bandas.
 
     `exclude`: palabras que no se marcan en la solución (p. ej. la Ruta Secreta).
+    `title`: título del puzzle; encabeza las dos páginas. Sin título se usan
+    «Sopa de Letras» y «Solución», como antes.
     """
     buffer = BytesIO()
     layout = page_layout(len(grid), len(grid[0]), words_display)
     c = _new_canvas(buffer, (layout.page_w, layout.page_h))
+    title = (title or "").strip()
 
-    _draw_page(c, layout, "Sopa de Letras", grid, bands=())
+    _draw_page(c, layout, title or "Sopa de Letras", grid, bands=())
     c.showPage()
-    _draw_page(c, layout, "Solución", grid, bands=geo.bands_for(placed, layout.cell, exclude))
+    _draw_page(c, layout, f"Solución: {title}" if title else "Solución", grid,
+               bands=geo.bands_for(placed, layout.cell, exclude))
     c.showPage()
 
     c.save()

@@ -1,0 +1,4 @@
+puzzle,titulo,filas,columnas,dificultad,senuelos,especiales,notas
+1,Próceres de Honduras,,,,,,"EJEMPLO para probar el formato: usa la configuración de la app (15x15, Medium)."
+2,Momentos de nuestra historia,15,15,Hard,,"Ñ,Á,É,Í,Ó,Ú,Ü","EJEMPLO: tamaño, dificultad y especiales propios."
+3,Repaso,12,12,Easy,4,,"EJEMPLO: 4 señuelos (pasa a Custom con las direcciones de Easy). MORAZÁN, REFORMA y LEMPIRA se repiten a propósito: el validador solo avisa."

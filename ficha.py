@@ -15,7 +15,7 @@ class FichaError(ValueError):
 
 
 def build_ficha(result, *, seed, rows, cols, allowed_dirs, decoys, extra_chars, words, hidden_words=(),
-                difficulty=None, specials_field=None, title=None):
+                difficulty=None, specials_field=None, title=None, volume=None, puzzle=None):
     """Construye la ficha (un dict listo para json.dumps) de un puzzle ya generado.
 
     `words` y `hidden_words` son las entradas tal como se pasaron a create_puzzle
@@ -43,7 +43,9 @@ def build_ficha(result, *, seed, rows, cols, allowed_dirs, decoys, extra_chars, 
     return {
         "formato": FORMATO,
         "motor_version": MOTOR_VERSION,
-        "titulo": title,
+        "volumen": volume,
+        "puzzle": puzzle,
+        "titulo": title or None,
         "semilla": seed,
         "filas": rows,
         "columnas": cols,

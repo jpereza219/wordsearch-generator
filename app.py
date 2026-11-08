@@ -7,65 +7,164 @@ import secrets
 from ficha import FichaError, build_ficha, load_ficha, regenerate_from_ficha
 from motor import DIRS, DIFFICULTY_PRESETS, PuzzleError, clean_specials_input, create_puzzle
 from salidas import file_names, grid_svg, grid_text, puzzle_files, puzzle_zip
+from volumenes import VolumenError, list_volumes, load_volume, parse_volume, resolve_config
+
+DIFFICULTIES = ["Very easy", "Easy", "Medium", "Hard", "Very hard", "Extreme", "Custom"]
+CUSTOM_DEFAULT_DIRS = ["H", "HR", "V", "VR", "D1", "D4"]
+DEFAULT_SPECIALS = "Ñ,Á,É,Í,Ó,Ú,Ü, ’"
+NO_VOLUME = "(ninguno: escribir a mano)"
+DRAFT = "Borrador subido"
+
+# Valores iniciales de los controles. Se guardan en st.session_state (con la
+# clave de cada control) para que elegir un puzzle de un volumen pueda llenarlos.
+FORM_DEFAULTS = {
+    "titulo": "",
+    "rows": 15,
+    "cols": 15,
+    "words": "niño\nasó\n’üsü\nhonduras\nbaleada\ntamales\nceiba\ncopán\nmarimba\niguana",
+    "difficulty": "Medium",
+    "dirs": CUSTOM_DEFAULT_DIRS,
+    "decoys": 6,
+    "use_specials": True,
+    "specials": DEFAULT_SPECIALS,
+    "hidden": "",
+    "seed": "",
+}
+for key, value in FORM_DEFAULTS.items():
+    st.session_state.setdefault(key, value)
+
+
+def fill_from_volume(volume):
+    """Llena el formulario con el puzzle elegido del volumen (todo sigue editable)."""
+    numero = st.session_state.get("puzzle_choice")
+    if numero is None:
+        return
+    cfg = resolve_config(volume.puzzle(numero))
+    st.session_state.update({
+        "titulo": cfg["titulo"],
+        "rows": cfg["filas"],
+        "cols": cfg["columnas"],
+        "words": "\n".join(cfg["palabras"]),
+        "hidden": "\n".join(cfg["ocultas"]),
+        "difficulty": cfg["dificultad"],
+        "use_specials": bool(cfg["especiales_campo"]),
+        "specials": cfg["especiales_campo"],
+    })
+    if cfg["dificultad"] == "Custom":
+        st.session_state["dirs"] = cfg["allowed_dirs"]
+        st.session_state["decoys"] = cfg["senuelos"]
+    st.session_state["vol_ctx"] = {"volumen": volume.nombre, "puzzle": numero}
+
+
+def clear_volume_context():
+    st.session_state.pop("vol_ctx", None)
+    st.session_state["puzzle_choice"] = None
+
 
 # ----------------------------
 # Streamlit UI
 # ----------------------------
 st.title("🧩 Generador de Sopa de Letras (con niveles y caracteres especiales)")
 
-c1, c2 = st.columns(2)
-rows = c1.number_input("Filas", min_value=5, max_value=40, value=15)
-cols = c2.number_input("Columnas", min_value=5, max_value=40, value=15)
+# --- Volumen ---
+with st.expander("🧪 Probar un borrador (subir puzzles.csv y palabras.csv)"):
+    draft_puzzles = st.file_uploader("puzzles.csv", type=["csv"], key="draft_puzzles")
+    draft_words = st.file_uploader("palabras.csv", type=["csv"], key="draft_words")
+    if draft_puzzles is not None and draft_words is not None:
+        st.caption(f"Elige «{DRAFT}» en el selector de volumen.")
 
-default_words = "niño\nasó\n’üsü\nhonduras\nbaleada\ntamales\nceiba\ncopán\nmarimba\niguana"
-words_input = st.text_area("Palabras (una por línea):", default_words)
+volume_options = [NO_VOLUME] + list_volumes()
+if draft_puzzles is not None and draft_words is not None:
+    volume_options.append(DRAFT)
+if st.session_state.get("vol_choice") not in volume_options:
+    st.session_state["vol_choice"] = NO_VOLUME
+vol_choice = st.selectbox("📚 Volumen", volume_options, key="vol_choice", on_change=clear_volume_context)
+
+volume = None
+if vol_choice != NO_VOLUME:
+    try:
+        if vol_choice == DRAFT:
+            volume = parse_volume(draft_puzzles.getvalue(), draft_words.getvalue(), nombre="borrador")
+        else:
+            volume = load_volume(vol_choice)
+    except VolumenError as e:
+        for message in e.errors:
+            st.error(message)
+if volume is not None:
+    summary = volume.resumen()
+    st.info(
+        f"**{summary['volumen']}**: {summary['puzzles']} puzzles definidos · "
+        f"{summary['palabras']} palabras · {summary['ocultas']} ocultas\n\n"
+        f"Ruta Secreta: «{summary['ruta_secreta'] or '—'}»"
+    )
+    if volume.warnings:
+        with st.expander(f"⚠️ Avisos del volumen ({len(volume.warnings)})"):
+            for message in volume.warnings:
+                st.warning(message)
+    st.selectbox(
+        "Puzzle",
+        [p.numero for p in volume.puzzles],
+        format_func=lambda n: volume.puzzle(n).etiqueta,
+        index=None,
+        placeholder="Elige un puzzle para llenar el formulario",
+        key="puzzle_choice",
+        on_change=fill_from_volume,
+        args=(volume,),
+    )
+
+vol_ctx = st.session_state.get("vol_ctx") if volume is not None else None
+if vol_ctx:
+    st.caption(f"Puzzle {vol_ctx['puzzle']} del volumen «{vol_ctx['volumen']}» (puedes editar todo antes de generar).")
+
+# --- Formulario ---
+titulo = st.text_input("Título", key="titulo")
+
+c1, c2 = st.columns(2)
+rows = c1.number_input("Filas", min_value=5, max_value=40, key="rows")
+cols = c2.number_input("Columnas", min_value=5, max_value=40, key="cols")
+
+words_input = st.text_area("Palabras (una por línea):", key="words")
 words_list = [w for w in (words_input.split("\n")) if w.strip()]
 
-difficulty = st.selectbox(
-    "Dificultad",
-    ["Very easy", "Easy", "Medium", "Hard", "Very hard", "Extreme", "Custom"],
-    index=2
-)
+difficulty = st.selectbox("Dificultad", DIFFICULTIES, key="difficulty")
 
 all_dir_keys = list(DIRS.keys())
 if difficulty == "Custom":
-    allowed_dirs = st.multiselect(
-        "Direcciones permitidas",
-        options=all_dir_keys,
-        default=["H", "HR", "V", "VR", "D1", "D4"]
-    )
-    decoys = st.slider("Decoys (fragmentos señuelo)", 0, 30, 6)
+    allowed_dirs = st.multiselect("Direcciones permitidas", options=all_dir_keys, key="dirs")
+    decoys = st.slider("Decoys (fragmentos señuelo)", 0, 30, key="decoys")
 else:
     preset_dirs, preset_decoys = DIFFICULTY_PRESETS[difficulty]
     allowed_dirs = preset_dirs
     decoys = preset_decoys
     st.caption(f"Direcciones: {', '.join(allowed_dirs)} | Decoys: {decoys}")
 
-use_specials = st.checkbox("🔡 Usar caracteres especiales en el relleno", value=True)
+use_specials = st.checkbox("🔡 Usar caracteres especiales en el relleno", key="use_specials")
 custom_specials = ""
 if use_specials:
-    custom_specials = st.text_input(
-        "Caracteres especiales (separados por comas)",
-        value="Ñ,Á,É,Í,Ó,Ú,Ü, ’"
-    )
+    custom_specials = st.text_input("Caracteres especiales (separados por comas)", key="specials")
 specials_field = custom_specials if use_specials else ""
 custom_specials = clean_specials_input(custom_specials) if use_specials else ""
 
-hidden_input = st.text_area("Ruta Secreta (palabras ocultas, una por línea)", "")
+hidden_input = st.text_area("Ruta Secreta (palabras ocultas, una por línea)", key="hidden")
 hidden_list = [w for w in hidden_input.split("\n") if w.strip()]
 
-seed_input = st.text_input("Semilla (dejar vacío para una nueva)", value="")
+seed_input = st.text_input("Semilla (dejar vacío para una nueva)", key="seed")
 
 
 def store_puzzle(result, seed, ficha):
     """Guarda todo lo generado para que la vista previa no desaparezca al pulsar
     un botón de descarga (cada clic vuelve a ejecutar el script)."""
+    context = dict(volume=ficha.get("volumen"), puzzle=ficha.get("puzzle"), title=ficha.get("titulo"))
     files = puzzle_files(result.grid, result.placed, result.words_display, seed,
-                         hidden=result.hidden_words, ficha=ficha)
-    names = file_names(seed)
+                         hidden=result.hidden_words, ficha=ficha, **context)
+    names = file_names(seed, **context)
     st.session_state["puzzle"] = {
         "seed": seed,
+        "title": ficha.get("titulo"),
+        "volume": ficha.get("volumen"),
+        "number": ficha.get("puzzle"),
         "result": result,
+        "names": names,
         "files": files,
         "zip": puzzle_zip(files),
         "text": grid_text(result.grid),
@@ -105,7 +204,9 @@ if st.button("Generar sopa"):
     ficha = build_ficha(
         result, seed=seed, rows=rows, cols=cols, allowed_dirs=allowed_dirs, decoys=decoys,
         extra_chars=custom_specials, words=words_list, hidden_words=hidden_list,
-        difficulty=difficulty, specials_field=specials_field,
+        difficulty=difficulty, specials_field=specials_field, title=titulo.strip() or None,
+        volume=vol_ctx["volumen"] if vol_ctx else None,
+        puzzle=vol_ctx["puzzle"] if vol_ctx else None,
     )
     store_puzzle(result, seed, ficha)
 
@@ -126,7 +227,12 @@ puzzle = st.session_state.get("puzzle")
 if puzzle:
     seed, result = puzzle["seed"], puzzle["result"]
     grid, placed, words_display = result.grid, result.placed, result.words_display
-    names = file_names(seed)
+    names = puzzle["names"]
+
+    if puzzle.get("title"):
+        st.subheader(puzzle["title"])
+    if puzzle.get("volume"):
+        st.caption(f"Volumen «{puzzle['volume']}», puzzle {puzzle['number']}")
 
     if puzzle.get("from_ficha"):
         st.success("Puzzle regenerado desde la ficha: la cuadrícula coincide con la guardada.")
@@ -170,7 +276,7 @@ if puzzle:
     st.download_button(
         "🗂 Descargar todo (ZIP)",
         data=puzzle["zip"],
-        file_name=f"s{seed}_sopa.zip",
+        file_name=names["zip"],
         mime="application/zip"
     )
 
