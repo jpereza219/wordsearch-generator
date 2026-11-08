@@ -50,6 +50,13 @@ DIFFICULTY_PRESETS = {
     "Custom":    ([], 0),
 }
 
+# Versión del motor de colocación. Se incrementa CADA VEZ que un cambio altera
+# el puzzle que sale con la misma entrada, configuración y semilla (orden de las
+# llamadas al azar, reglas de colocación, relleno, señuelos o copias). Las fichas
+# (ficha.json) guardan esta versión: una ficha solo se regenera igual con el
+# mismo valor. Historia: "3.0" = paso 3 + reparto de direcciones (3b).
+MOTOR_VERSION = "3.0"
+
 MIN_WORD_LEN = 3
 
 # Direcciones "al revés": se leen de derecha a izquierda o de abajo arriba
@@ -76,10 +83,24 @@ class PuzzleError(ValueError):
 @dataclass
 class PuzzleResult:
     grid: list
-    placed: list            # [(palabra_limpia, [(fila, col), ...]), ...] en orden de colocación
+    placed: list            # [(palabra_limpia, [(fila, col), ...]), ...] en orden de colocación,
+                            # incluidas las palabras ocultas
     words_display: list     # lista impresa (sin repetidas), tal como se escribió (NFC)
     warnings: list = field(default_factory=list)
     attempts: int = 1
+    hidden_display: list = field(default_factory=list)  # Ruta Secreta, tal como se escribió (NFC)
+    hidden_words: list = field(default_factory=list)    # Ruta Secreta, forma limpia
+
+    @property
+    def visible_placed(self):
+        """Palabras de la lista impresa (sin las ocultas)."""
+        hidden = set(self.hidden_words)
+        return [(w, c) for w, c in self.placed if w not in hidden]
+
+    @property
+    def hidden_placed(self):
+        hidden = set(self.hidden_words)
+        return [(w, c) for w, c in self.placed if w in hidden]
 
 
 # ----------------------------
@@ -203,29 +224,59 @@ class Prepared:
     filler_chars: str
     allowed_dirs: list
     warnings: list
+    hidden_display: list = field(default_factory=list)
+    hidden_clean: list = field(default_factory=list)
 
 
-def prepare_words(words, rows, cols, allowed_dirs, extra_chars: str) -> Prepared:
-    """Normaliza y valida. Lanza PuzzleError con todos los errores encontrados."""
+def _dedupe(entries):
+    display, clean, removed, seen = [], [], [], set()
+    for d in entries:
+        c = clean_word(d)
+        if c in seen:
+            removed.append(d)
+            continue
+        seen.add(c)
+        display.append(d)
+        clean.append(c)
+    return display, clean, removed
+
+
+def prepare_words(words, rows, cols, allowed_dirs, extra_chars: str, hidden_words=()) -> Prepared:
+    """Normaliza y valida. Lanza PuzzleError con todos los errores encontrados.
+
+    Las palabras ocultas (Ruta Secreta) pasan por las mismas validaciones que las
+    de la lista; en los mensajes se señalan con «(oculta)».
+    """
     errors, warnings = [], []
 
     # 1. Normalización
     entries = [nfc(w).strip() for w in words if w.strip()]
+    hidden_entries = [nfc(w).strip() for w in (hidden_words or []) if w.strip()]
     filler_chars = filler_alphabet(extra_chars)
 
     # 2a. Repetidas (forma limpia)
-    words_display, words_clean, removed = [], [], []
-    seen = set()
-    for display in entries:
-        clean = clean_word(display)
-        if clean in seen:
-            removed.append(display)
-            continue
-        seen.add(clean)
-        words_display.append(display)
-        words_clean.append(clean)
+    words_display, words_clean, removed = _dedupe(entries)
     if removed:
         warnings.append("Se eliminaron palabras repetidas: " + ", ".join(removed) + ".")
+    hidden_display, hidden_clean, removed_hidden = _dedupe(hidden_entries)
+    if removed_hidden:
+        warnings.append("Se eliminaron palabras ocultas repetidas: " + ", ".join(removed_hidden) + ".")
+
+    # Una oculta no puede ser una palabra de la lista.
+    visible_set = set(words_clean)
+    for d, c in zip(hidden_display, hidden_clean):
+        if c in visible_set:
+            errors.append(f"La palabra oculta «{d}» ya está en la lista de palabras.")
+
+    # Todas juntas para el resto de validaciones: (texto, limpia, oculta)
+    every = [(d, c, False) for d, c in zip(words_display, words_clean)]
+    every += [(d, c, True) for d, c in zip(hidden_display, hidden_clean)]
+
+    def name(d, hidden):
+        return f"{d} (oculta)" if hidden else d
+
+    def quoted(d, hidden):
+        return f"«{d}» (oculta)" if hidden else f"«{d}»"
 
     # 2d. Direcciones
     dirs = []
@@ -241,7 +292,7 @@ def prepare_words(words, rows, cols, allowed_dirs, extra_chars: str) -> Prepared
         errors.append("No hay palabras para colocar.")
 
     # 2b. Largo mínimo
-    short = [d for d, c in zip(words_display, words_clean) if len(c) < MIN_WORD_LEN]
+    short = [name(d, h) for d, c, h in every if len(c) < MIN_WORD_LEN]
     if short:
         errors.append(
             f"Palabras con menos de {MIN_WORD_LEN} letras: " + ", ".join(short) + "."
@@ -250,10 +301,10 @@ def prepare_words(words, rows, cols, allowed_dirs, extra_chars: str) -> Prepared
     # 2c. Palabras que no caben
     if dirs:
         limit = max_word_length(rows, cols, dirs)
-        for d, c in zip(words_display, words_clean):
+        for d, c, h in every:
             if len(c) > limit:
                 errors.append(
-                    f"«{d}» tiene {len(c)} letras y no cabe: el máximo con estas direcciones "
+                    f"{quoted(d, h)} tiene {len(c)} letras y no cabe: el máximo con estas direcciones "
                     f"en {rows}x{cols} es {limit}."
                 )
 
@@ -264,36 +315,36 @@ def prepare_words(words, rows, cols, allowed_dirs, extra_chars: str) -> Prepared
     # avisa si las direcciones permitidas incluyen alguna junto con su opuesta.
     vectors = {DIRS[k] for k in dirs}
     reversed_allowed = any((-dr, -dc) in vectors for dr, dc in vectors)
-    for d_a, a in zip(words_display, words_clean):
-        for d_b, b in zip(words_display, words_clean):
+    for d_a, a, h_a in every:
+        for d_b, b, h_b in every:
             if a == b:
                 continue
             if a in b:
                 warnings.append(
-                    f"«{d_a}» está dentro de «{d_b}»: aparecerá más de una vez en la cuadrícula."
+                    f"{quoted(d_a, h_a)} está dentro de {quoted(d_b, h_b)}: aparecerá más de una vez en la cuadrícula."
                 )
             elif reversed_allowed and a[::-1] in b:
                 warnings.append(
-                    f"«{d_a}» está dentro de «{d_b}» leída al revés: aparecerá más de una vez "
+                    f"{quoted(d_a, h_a)} está dentro de {quoted(d_b, h_b)} leída al revés: aparecerá más de una vez "
                     f"en la cuadrícula."
                 )
 
     # 2f. Letras fuera del alfabeto de relleno (aviso)
     alphabet = set(filler_chars)
     missing = {}
-    for d, c in zip(words_display, words_clean):
+    for d, c, h in every:
         for ch in c:
             if ch not in alphabet:
                 missing.setdefault(ch, [])
-                if d not in missing[ch]:
-                    missing[ch].append(d)
+                if name(d, h) not in missing[ch]:
+                    missing[ch].append(name(d, h))
     for ch, owners in missing.items():
         warnings.append(
             f"El carácter «{ch}» de {', '.join(owners)} no está en el alfabeto de relleno y "
             f"delatará la palabra. Agrégalo al campo de caracteres especiales."
         )
 
-    return Prepared(words_display, words_clean, filler_chars, dirs, warnings)
+    return Prepared(words_display, words_clean, filler_chars, dirs, warnings, hidden_display, hidden_clean)
 
 
 # ----------------------------
@@ -449,18 +500,24 @@ def _fix_copies(grid, placed, filler_chars, rng):
 # ----------------------------
 # Generator
 # ----------------------------
-def create_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragments: int, seed=None) -> PuzzleResult:
+def create_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragments: int, seed=None,
+                  hidden_words=()) -> PuzzleResult:
     """Genera un puzzle validado. Lanza PuzzleError si no se puede.
 
     Con la misma `seed` se obtiene siempre el mismo puzzle. Si `seed` es None,
     la instancia de Random se inicializa desde el sistema operativo (no se usa
     ni se altera el `random` global).
+
+    `hidden_words` (Ruta Secreta): palabras que se colocan con las mismas reglas
+    que las de la lista, pero no van en la lista impresa. Sin ocultas, el
+    resultado es idéntico al de antes de existir este parámetro.
     """
-    prep = prepare_words(words, rows, cols, allowed_dirs, extra_chars)
+    prep = prepare_words(words, rows, cols, allowed_dirs, extra_chars, hidden_words)
     rng = random.Random(seed)
 
-    # De la más larga a la más corta; empates en el orden de entrada.
-    order = sorted(prep.words_clean, key=len, reverse=True)
+    # De la más larga a la más corta; empates en el orden de entrada (primero la
+    # lista y después las ocultas).
+    order = sorted(prep.words_clean + prep.hidden_clean, key=len, reverse=True)
 
     goals = _variety_goals(order, rows, cols, prep.allowed_dirs)
 
@@ -485,7 +542,8 @@ def create_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragm
             copy_failures += 1
             continue
 
-        result = PuzzleResult(grid, placed, prep.words_display, list(prep.warnings), attempt)
+        result = PuzzleResult(grid, placed, prep.words_display, list(prep.warnings), attempt,
+                              list(prep.hidden_display), list(prep.hidden_clean))
         if varied:
             return result
         fallback = result
@@ -499,6 +557,7 @@ def create_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragm
         return fallback
 
     display_of = dict(zip(prep.words_clean, prep.words_display))
+    display_of.update((c, f"{d} (oculta)") for c, d in zip(prep.hidden_clean, prep.hidden_display))
     errors = []
     if failed_words:
         errors.append(
@@ -513,7 +572,12 @@ def create_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragm
     raise PuzzleError(errors)
 
 
-def generate_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragments: int, seed=None):
-    """Compatibilidad: devuelve (grid, placed, words_display). Lanza PuzzleError."""
-    result = create_puzzle(words, rows, cols, allowed_dirs, extra_chars, decoy_fragments, seed=seed)
+def generate_puzzle(words, rows, cols, allowed_dirs, extra_chars: str, decoy_fragments: int, seed=None,
+                    hidden_words=()):
+    """Compatibilidad: devuelve (grid, placed, words_display). Lanza PuzzleError.
+
+    `placed` incluye las palabras ocultas; `words_display` no.
+    """
+    result = create_puzzle(words, rows, cols, allowed_dirs, extra_chars, decoy_fragments, seed=seed,
+                           hidden_words=hidden_words)
     return result.grid, result.placed, result.words_display

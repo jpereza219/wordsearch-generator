@@ -66,6 +66,21 @@ CASES = {
             "TATUMBLA", "VALLE DE ÁNGELES", "VALLECILLO", "VILLA DE SAN FRANCISCO",
         ],
     ),
+    # 15x15, Custom con las 8 direcciones y 6 señuelos, con una palabra oculta (Ruta Secreta).
+    "ruta_secreta_15x15_custom8": dict(
+        seed=505,
+        rows=15,
+        cols=15,
+        difficulty="Custom",
+        allowed_dirs=ALL_DIRS,
+        decoys=CUSTOM_DEFAULT_DECOYS,
+        specials_ui="ÑÁÉÍÓÚÜ",
+        words=[
+            "BELICE", "COLOMBIA", "CUBA", "EL SALVADOR", "GUATEMALA",
+            "ISLAS CAIMÁN", "JAMAICA", "MÉXICO", "NICARAGUA",
+        ],
+        hidden=["GRACIAS"],
+    ),
 }
 
 

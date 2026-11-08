@@ -29,7 +29,7 @@ def _serialize(case_name, case, extra_chars, allowed_dirs, decoys, result):
     for row in grid:
         for cell in row:
             assert len(cell) == 1 and cell != " ", f"celda inesperada: {cell!r}"
-    return {
+    data = {
         "case": case_name,
         "config": {
             "seed": case["seed"],
@@ -49,6 +49,12 @@ def _serialize(case_name, case, extra_chars, allowed_dirs, decoys, result):
         "warnings": result.warnings,
         "attempts": result.attempts,
     }
+    # Solo los casos con Ruta Secreta llevan estas claves (los snapshots
+    # anteriores no cambian).
+    if case.get("hidden"):
+        data["config"]["hidden"] = case["hidden"]
+        data["hidden_words"] = result.hidden_words
+    return data
 
 
 @pytest.mark.parametrize("case_name", sorted(CASES))
@@ -56,7 +62,8 @@ def test_snapshot(motor_mod, seeded, case_name):
     case = CASES[case_name]
     allowed_dirs, decoys, extra_chars = resolve(motor_mod, case)
     result = motor.create_puzzle(
-        case["words"], case["rows"], case["cols"], allowed_dirs, extra_chars, decoys, seed=case["seed"]
+        case["words"], case["rows"], case["cols"], allowed_dirs, extra_chars, decoys, seed=case["seed"],
+        hidden_words=case.get("hidden", []),
     )
     actual = _serialize(case_name, case, extra_chars, allowed_dirs, decoys, result)
 
